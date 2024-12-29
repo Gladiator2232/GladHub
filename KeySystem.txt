@@ -1,169 +1,190 @@
--- Advanced Script with Modern UI, Tween Animations, and Fade Effects
+local a = "GladBest" -- Correct Key
+local attempts = 0
+local lockTime = 0
 
-local correctKey = "GladBest" -- Correct key for script execution
+local function b()
+    local c = Instance.new("ScreenGui")
+    c.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local function createUI()
-    -- ScreenGui setup
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    -- Main UI Frame
+    local d = Instance.new("Frame")
+    d.Parent = c
+    d.Size = UDim2.new(0, 320, 0, 300)
+    d.Position = UDim2.new(0.5, -160, 0.5, -150)
+    d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    d.BackgroundTransparency = 0.5
+    Instance.new("UICorner").Parent = d
 
-    -- Main Frame (with gradient background)
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Parent = screenGui
-    mainFrame.Size = UDim2.new(0, 350, 0, 350)
-    mainFrame.Position = UDim2.new(0.5, -175, 0.5, -175)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-    mainFrame.BackgroundTransparency = 0.5
-    mainFrame.BorderSizePixel = 0
+    -- Title
+    local k = Instance.new("TextLabel")
+    k.Parent = d
+    k.Size = UDim2.new(1, 0, 0.2, 0)
+    k.Position = UDim2.new(0, 0, 0, 0)
+    k.Text = "Enter the key to execute the script:"
+    k.TextColor3 = Color3.fromRGB(255, 255, 255)
+    k.TextScaled = true
+    k.BackgroundTransparency = 1
+    k.Font = Enum.Font.GothamBold
+    k.TextStrokeTransparency = 0.8
+    k.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
 
-    -- Applying rounded corners to main frame
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 15)
-    corner.Parent = mainFrame
+    -- Key input field
+    local l = Instance.new("TextBox")
+    l.Parent = d
+    l.Size = UDim2.new(0.8, 0, 0.3, 0)
+    l.Position = UDim2.new(0.1, 0, 0.25, 0)
+    l.PlaceholderText = "Insert your key here"
+    l.TextColor3 = Color3.fromRGB(0, 255, 255)
+    l.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    l.BackgroundTransparency = 0.3
+    l.TextScaled = true
+    l.Text = ""
+    l.Font = Enum.Font.GothamBold
+    Instance.new("UICorner").Parent = l
 
-    -- Tween for smooth appearance of the main frame
-    mainFrame.Position = UDim2.new(0.5, -175, 0.5, -350)
-    game:GetService("TweenService"):Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -175, 0.5, -175)}):Play()
+    -- Warning Text
+    local warningText = Instance.new("TextLabel")
+    warningText.Parent = d
+    warningText.Size = UDim2.new(1, 0, 0.2, 0)
+    warningText.Position = UDim2.new(0, 0, 0.6, 0)
+    warningText.Text = "Warning: 4 wrong attempts will lock you for 60 seconds!"
+    warningText.TextColor3 = Color3.fromRGB(255, 255, 0)
+    warningText.TextScaled = true
+    warningText.BackgroundTransparency = 1
+    warningText.Font = Enum.Font.GothamBold
+    warningText.TextStrokeTransparency = 0.8
+    warningText.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
 
-    -- Fade-in effect for UI elements
-    game:GetService("TweenService"):Create(mainFrame, TweenInfo.new(1), {BackgroundTransparency = 0.3}):Play()
+    -- Submit button
+    local m = Instance.new("TextButton")
+    m.Parent = d
+    m.Size = UDim2.new(0.8, 0, 0.2, 0)
+    m.Position = UDim2.new(0.1, 0, 0.9, 0)
+    m.Text = "Submit"
+    m.TextColor3 = Color3.fromRGB(255, 255, 255)
+    m.TextScaled = true
+    m.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    m.BackgroundTransparency = 0.3
+    m.Font = Enum.Font.GothamBold
+    Instance.new("UICorner").Parent = m
 
-    -- Header Text (Stylish)
-    local headerText = Instance.new("TextLabel")
-    headerText.Parent = mainFrame
-    headerText.Size = UDim2.new(1, 0, 0.2, 0)
-    headerText.Position = UDim2.new(0, 0, 0, 0)
-    headerText.Text = "Enter the key to unlock script:"
-    headerText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    headerText.TextScaled = true
-    headerText.BackgroundTransparency = 1
-    headerText.Font = Enum.Font.GothamBold
-    headerText.TextStrokeTransparency = 0.5
-    headerText.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
+    -- Error message label
+    local n = Instance.new("TextLabel")
+    n.Parent = d
+    n.Size = UDim2.new(1, 0, 0.2, 0)
+    n.Position = UDim2.new(0, 0, 0.8, 0)
+    n.Text = ""
+    n.TextColor3 = Color3.fromRGB(255, 0, 0)
+    n.TextScaled = true
+    n.BackgroundTransparency = 1
+    n.Font = Enum.Font.GothamBold
 
-    -- Fade-in for header
-    game:GetService("TweenService"):Create(headerText, TweenInfo.new(1), {TextTransparency = 0}):Play()
+    -- Lock UI Frame (Visible when too many wrong attempts)
+    local lockFrame = Instance.new("Frame")
+    lockFrame.Parent = c
+    lockFrame.Size = UDim2.new(0, 320, 0, 260)
+    lockFrame.Position = UDim2.new(0.5, -160, 0.5, -130)
+    lockFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    lockFrame.BackgroundTransparency = 0.6
+    lockFrame.Visible = false
+    Instance.new("UICorner").Parent = lockFrame
 
-    -- TextBox for Key Entry (With focus effects)
-    local keyBox = Instance.new("TextBox")
-    keyBox.Parent = mainFrame
-    keyBox.Size = UDim2.new(0.8, 0, 0.2, 0)
-    keyBox.Position = UDim2.new(0.1, 0, 0.25, 0)
-    keyBox.PlaceholderText = "Insert your key here"
-    keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    keyBox.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    keyBox.BackgroundTransparency = 0.3
-    keyBox.TextScaled = true
-    keyBox.Font = Enum.Font.Gotham
-    keyBox.Text = ""
+    local lockLabel = Instance.new("TextLabel")
+    lockLabel.Parent = lockFrame
+    lockLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    lockLabel.Position = UDim2.new(0, 0, 0, 0)
+    lockLabel.Text = "Too many attempts! Please wait:"
+    lockLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    lockLabel.TextScaled = true
+    lockLabel.BackgroundTransparency = 1
+    lockLabel.Font = Enum.Font.GothamBold
 
-    local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 12)
-    boxCorner.Parent = keyBox
+    local countdownLabel = Instance.new("TextLabel")
+    countdownLabel.Parent = lockFrame
+    countdownLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    countdownLabel.Position = UDim2.new(0, 0, 0.25, 0)
+    countdownLabel.Text = "60"
+    countdownLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    countdownLabel.TextScaled = true
+    countdownLabel.BackgroundTransparency = 1
+    countdownLabel.Font = Enum.Font.GothamBold
 
-    -- Fade-in for keyBox
-    game:GetService("TweenService"):Create(keyBox, TweenInfo.new(1), {TextTransparency = 0}):Play()
-
-    -- Tween for TextBox on focus
-    keyBox.Focused:Connect(function()
-        game:GetService("TweenService"):Create(keyBox, TweenInfo.new(0.3), {BackgroundTransparency = 0.1}):Play()
-    end)
-    keyBox.FocusLost:Connect(function()
-        game:GetService("TweenService"):Create(keyBox, TweenInfo.new(0.3), {BackgroundTransparency = 0.3}):Play()
-    end)
-
-    -- Submit Button (with hover and click animations)
-    local submitButton = Instance.new("TextButton")
-    submitButton.Parent = mainFrame
-    submitButton.Size = UDim2.new(0.8, 0, 0.2, 0)
-    submitButton.Position = UDim2.new(0.1, 0, 0.6, 0)
-    submitButton.Text = "Submit"
-    submitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    submitButton.TextScaled = true
-    submitButton.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-    submitButton.BackgroundTransparency = 0.5
-    submitButton.Font = Enum.Font.GothamBold
-
-    local submitButtonCorner = Instance.new("UICorner")
-    submitButtonCorner.CornerRadius = UDim.new(0, 12)
-    submitButtonCorner.Parent = submitButton
-
-    -- Fade-in for Submit Button
-    game:GetService("TweenService"):Create(submitButton, TweenInfo.new(1), {BackgroundTransparency = 0.5}):Play()
-
-    -- Tween for Submit Button (hover effect)
-    submitButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(submitButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 255)}):Play()
-    end)
-
-    submitButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(submitButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(34, 34, 34)}):Play()
-    end)
-
-    submitButton.MouseButton1Click:Connect(function()
-        if keyBox.Text == correctKey then
-            -- If correct, destroy UI and run the script
-            game:GetService("TweenService"):Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -175, 0.5, -350)}):Play()
-            wait(0.5)
-            screenGui:Destroy()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/Gladiator2232/GladHub/refs/heads/main/GladHub.txt"))()
-        else
-            errorMessage.Text = "Incorrect key, try again."
-            -- Fade-in error message
-            game:GetService("TweenService"):Create(errorMessage, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
-        end
-    end)
-
-    -- Error message display (with fade-in and fade-out effects)
-    local errorMessage = Instance.new("TextLabel")
-    errorMessage.Parent = mainFrame
-    errorMessage.Size = UDim2.new(1, 0, 0.2, 0)
-    errorMessage.Position = UDim2.new(0, 0, 0.85, 0)
-    errorMessage.Text = ""
-    errorMessage.TextColor3 = Color3.fromRGB(255, 0, 0)
-    errorMessage.TextScaled = true
-    errorMessage.BackgroundTransparency = 1
-    errorMessage.Font = Enum.Font.GothamBold
-    errorMessage.TextTransparency = 1
-
-    -- Fade-in the error message with a delay if incorrect
-    errorMessage.TextTransparency = 1
-    game:GetService("TweenService"):Create(errorMessage, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
-
-    -- Close Button (with hover effect)
+    -- Close Button for Lock UI
     local closeButton = Instance.new("TextButton")
-    closeButton.Parent = mainFrame
+    closeButton.Parent = lockFrame
     closeButton.Size = UDim2.new(0.2, 0, 0.2, 0)
-    closeButton.Position = UDim2.new(1, -40, 0, -40)
+    closeButton.Position = UDim2.new(1, 0, 0, 0)
     closeButton.Text = "X"
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeButton.TextScaled = true
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    closeButton.BackgroundTransparency = 0.7
+    closeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    closeButton.BackgroundTransparency = 0.3
     closeButton.Font = Enum.Font.GothamBold
-
-    local closeButtonCorner = Instance.new("UICorner")
-    closeButtonCorner.CornerRadius = UDim.new(0, 12)
-    closeButtonCorner.Parent = closeButton
-
-    -- Fade-in for close button
-    game:GetService("TweenService"):Create(closeButton, TweenInfo.new(1), {BackgroundTransparency = 0.7}):Play()
-
-    closeButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 0, 0)}):Play()
-    end)
-
-    closeButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 0, 0)}):Play()
-    end)
-
+    Instance.new("UICorner").Parent = closeButton
     closeButton.MouseButton1Click:Connect(function()
-        -- Fade-out and destroy UI
-        game:GetService("TweenService"):Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -175, 0.5, -350)}):Play()
-        wait(0.5)
-        screenGui:Destroy()
+        lockFrame.Visible = false
+        c:Destroy()
     end)
+
+    -- Submit Button Click
+    m.MouseButton1Click:Connect(function()
+        if lockTime > 0 then
+            return
+        end
+        
+        if l.Text == a then
+            c:Destroy()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Gladiator2232/GladHub/refs/heads/main/GladHub.txt"))()
+        else
+            attempts = attempts + 1
+            n.Text = "Incorrect key, please try again."
+
+            -- Warning message after 1 incorrect attempt
+            if attempts == 1 then
+                warningText.Text = "Warning: 4 wrong attempts will lock you for 60 seconds!"
+            end
+
+            if attempts >= 4 then
+                lockTime = 60
+                lockFrame.Visible = true
+                countdownLabel.Text = tostring(lockTime)
+                
+                -- Start Countdown
+                spawn(function()
+                    while lockTime > 0 do
+                        wait(1)
+                        lockTime = lockTime - 1
+                        countdownLabel.Text = tostring(lockTime)
+                    end
+                    lockFrame.Visible = false
+                    attempts = 0 -- Reset attempts after lock time ends
+                end)
+            end
+        end
+    end)
+
+    -- Close Button
+    local o = Instance.new("TextButton")
+    o.Parent = d
+    o.Size = UDim2.new(0.2, 0, 0.2, 0)
+    o.Position = UDim2.new(1, 0, 0, 0)
+    o.Text = "X"
+    o.TextColor3 = Color3.fromRGB(255, 255, 255)
+    o.TextScaled = true
+    o.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    o.BackgroundTransparency = 0.3
+    o.Font = Enum.Font.GothamBold
+    Instance.new("UICorner").Parent = o
+    o.MouseButton1Click:Connect(function()
+        c:Destroy()
+    end)
+
+    -- Tween for the UI to appear smoothly
+    local tweenService = game:GetService("TweenService")
+    local goal = {Position = UDim2.new(0.5, -160, 0.5, -150), BackgroundTransparency = 0.5}
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = tweenService:Create(d, tweenInfo, goal)
+    tween:Play()
 end
 
--- Run the function to create the UI
-createUI()
+b()
