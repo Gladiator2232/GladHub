@@ -1,125 +1,117 @@
 -- Get the LocalPlayer
-local player = game.Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
+local a = game.Players.LocalPlayer
+local b = Instance.new("ScreenGui")
+b.Parent = a:WaitForChild("PlayerGui")
 
 -- Step 1: Create Frame1 (Main Frame)
-local frame1 = Instance.new("Frame")
-frame1.Parent = screenGui
-frame1.Size = UDim2.new(0, 282, 0, 44) -- Set size {0, 282},{0, 44}
-frame1.Position = UDim2.new(1, 0, 0.276, 0) -- Start off-screen to the right (position is outside the screen initially)
-frame1.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background color
-frame1.BackgroundTransparency = 0.3 -- Semi-transparent background
+local c = Instance.new("Frame")
+c.Parent = b
+c.Size = UDim2.new(0, 282, 0, 44)
+c.Position = UDim2.new(1, 0, 0.276, 0)
+c.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+c.BackgroundTransparency = 0.3
 
 -- Step 2: Add UI Corner to Frame1
-local uiCorner1 = Instance.new("UICorner")
-uiCorner1.Parent = frame1
+local d = Instance.new("UICorner")
+d.Parent = c
 
 -- Step 3: Create Frame2 inside Frame1 (Inner frame for the label)
-local frame2 = Instance.new("Frame")
-frame2.Parent = frame1
-frame2.Size = UDim2.new(0, 268, 0, 31) -- Size {0, 268},{0, 31}
-frame2.Position = UDim2.new(0.028, 0, 0.145, 0) -- Position {0.028, 0},{0.145, 0}
-frame2.BackgroundColor3 = Color3.fromRGB(0, 255, 255) -- Cyan background color
-frame2.BackgroundTransparency = 0.3 -- Set transparency to 0.3
+local e = Instance.new("Frame")
+e.Parent = c
+e.Size = UDim2.new(0, 268, 0, 31)
+e.Position = UDim2.new(0.028, 0, 0.145, 0)
+e.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+e.BackgroundTransparency = 0.3
 
 -- Step 4: Add UI Corner to Frame2
-local uiCorner2 = Instance.new("UICorner")
-uiCorner2.Parent = frame2
+local f = Instance.new("UICorner")
+f.Parent = e
 
 -- Step 5: Create TextLabel inside Frame2
-local textLabel = Instance.new("TextLabel")
-textLabel.Parent = frame2
-textLabel.Size = UDim2.new(0, 264, 0, 27) -- Size {0, 264},{0, 27}
-textLabel.Position = UDim2.new(0.007, 0, 0.06, 0) -- Position {0.007, 0},{0.06, 0}
-textLabel.BackgroundTransparency = 0.3 -- Text Background Transparency to 0.3
-textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background color
-textLabel.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan text color (0, 255, 255)
-textLabel.TextTransparency = 0.3 -- Text transparency
-textLabel.TextScaled = true -- Ensure the text is scaled to fit
+local g = Instance.new("TextLabel")
+g.Parent = e
+g.Size = UDim2.new(0, 264, 0, 27)
+g.Position = UDim2.new(0.007, 0, 0.06, 0)
+g.BackgroundTransparency = 0.3
+g.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+g.TextColor3 = Color3.fromRGB(0, 255, 255)
+g.TextTransparency = 0.3
+g.TextScaled = true
 
 -- Step 6: Add UI Corner to TextLabel
-local uiCorner3 = Instance.new("UICorner")
-uiCorner3.Parent = textLabel
+local h = Instance.new("UICorner")
+h.Parent = g
 
 -- Step 7: Create a dynamic "Loading..." text
-local loadingText = {"Loading.", "Loading..", "Loading..."} -- Array of dynamic texts
+local i = {"Loading.", "Loading..", "Loading..."} -- Array of dynamic texts
 
-local function updateTextLabel()
-    local index = 1
+local function j()
+    local k = 1
     while true do
-        textLabel.Text = loadingText[index] -- Set the text to the current index
-        index = index + 1
-        if index > #loadingText then
-            index = 1 -- Reset to the first text after the last one
-        end
+        g.Text = i[k] -- Set the text to the current index
+        k = k + 1
+        if k > #i then k = 1 end
         wait(0.5) -- Update every 0.5 seconds
     end
 end
 
 -- Run the dynamic loading text function
-spawn(updateTextLabel)
+spawn(j)
 
 -- Step 8: Tween the Frame to appear (slide in from the right) over 2 seconds (faster)
-local tweenService = game:GetService("TweenService")
+local l = game:GetService("TweenService")
 
 -- Slide-in effect from the right over 2 seconds using Sine easing (faster)
-local slideInTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut) -- 2 seconds for faster animation
-local slideInTweenGoal = {Position = UDim2.new(0.5, -141, 0.5, -22)} -- Position centered (screen center)
-local slideInTween = tweenService:Create(frame1, slideInTweenInfo, slideInTweenGoal)
+local m = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut) -- 2 seconds for faster animation
+local n = {Position = UDim2.new(0.5, -141, 0.5, -22)} -- Position centered (screen center)
+local o = l:Create(c, m, n)
 
 -- Step 9: Create the New White Frame (Under the Main UI)
-local newFrame = Instance.new("Frame")
-newFrame.Parent = screenGui
-newFrame.Size = UDim2.new(0, 1, 0, 6) -- Initially very small size {0, 1},{0, 6}
--- Adjust the Position to be more under the main UI frame
-newFrame.Position = UDim2.new(0.5, -230, 0.5, 44) -- Move it 44 pixels under the main frame
-newFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- White color background
-newFrame.BackgroundTransparency = 0 -- Solid white background
+local p = Instance.new("Frame")
+p.Parent = b
+p.Size = UDim2.new(0, 1, 0, 6) -- Initially very small size
+p.Position = UDim2.new(0.5, -230, 0.5, 44)
+p.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+p.BackgroundTransparency = 0
 
 -- Step 10: Add UI Corner to New Frame
-local uiCorner4 = Instance.new("UICorner")
-uiCorner4.Parent = newFrame
+local q = Instance.new("UICorner")
+q.Parent = p
 
 -- Step 11: Tween the new Frame to expand (13 seconds long animation)
-local expandTweenInfo = TweenInfo.new(13, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- 13 seconds long expansion animation
-local expandTweenGoal = {Size = UDim2.new(0, 460, 0, 6)} -- Final size is {0, 460}, {0, 6}
-local expandTween = tweenService:Create(newFrame, expandTweenInfo, expandTweenGoal)
+local r = TweenInfo.new(13, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- 13 seconds long expansion animation
+local s = {Size = UDim2.new(0, 460, 0, 6)} -- Final size is {0, 460}, {0, 6}
+local t = l:Create(p, r, s)
 
 -- Step 12: Fade out the New Frame after 13 seconds
-local fadeOutTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out) -- 2 seconds fade out duration
-local fadeOutTweenGoal = {BackgroundTransparency = 1}  -- Fade out to full transparency
+local u = TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out) -- 2 seconds fade out duration
+local v = {BackgroundTransparency = 1}  -- Fade out to full transparency
 
 -- Step 13: Tween the Main UI (Frame1) to disappear (fade out after 15 seconds)
-local fadeOutMainUIInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- Fade out after 15 seconds
-local fadeOutMainUIGoal = {BackgroundTransparency = 1} -- Fade out the main UI
-local fadeOutMainUI = tweenService:Create(frame1, fadeOutMainUIInfo, fadeOutMainUIGoal)
+local w = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- Fade out after 15 seconds
+local x = {BackgroundTransparency = 1} -- Fade out the main UI
+local y = l:Create(c, w, x)
 
 -- Step 14: Tween the Main UI to slide out after 15 seconds
-local slideOutTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- Slide out duration
-local slideOutTweenGoal = {Position = UDim2.new(1, 0, 0.5, -22)} -- Move to the right off-screen
-local slideOutTween = tweenService:Create(frame1, slideOutTweenInfo, slideOutTweenGoal)
+local z = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- Slide out duration
+local aa = {Position = UDim2.new(1, 0, 0.5, -22)} -- Move to the right off-screen
+local ab = l:Create(c, z, aa)
 
 -- Step 15: Play the animations for both the main UI and the new frame at the same time
-slideInTween:Play()  -- Start the slide-in animation for the main UI frame
-expandTween:Play()   -- Start the expand animation for the new frame
+o:Play()  -- Start the slide-in animation for the main UI frame
+t:Play()   -- Start the expand animation for the new frame
 
 -- Step 16: Teleportation Logic (Runs at the same time as UI)
 spawn(function()
-    -- Check if _CHRISTMAS folder exists in Workspace
     if workspace:FindFirstChild("_CHRISTMAS") then
         print("GladHub Executed")
         wait(15)
         print("Loaded Successful")
-        
-        local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
 
-        -- Ensure that the player and target part exist
-        if player and player.Character and targetPart then
-            local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
-
-            -- Teleport the player by setting the HumanoidRootPart position
-            humanoidRootPart.CFrame = targetPart.CFrame
+        local ac = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
+        if a and a.Character and ac then
+            local ad = a.Character:WaitForChild("HumanoidRootPart")
+            ad.CFrame = ac.CFrame
         else
             print("Target part 'Barrier' not found or player character not found.")
         end
@@ -128,27 +120,15 @@ spawn(function()
         wait(15)
         print("Loaded Successful")
 
-        local lanes = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES"):FindFirstChild("1")
-        
-        -- Check if the "1" lane exists and has a "spawn" part
-        if lanes then
-            local targetPart = lanes:FindFirstChild("spawn")
-            
-            -- Ensure that the player and target part exist
-            if player and player.Character and targetPart then
-                local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
-
-                -- Get the position of the target part
-                local targetPosition = targetPart.Position
-                
-                -- Create a new position 2 studs above the target spawn
-                local newPosition = targetPosition + Vector3.new(0, 15, 0)
-
-                -- Teleport the player by setting the HumanoidRootPart position 2 studs above the spawn
-                humanoidRootPart.CFrame = CFrame.new(newPosition)
-
-                -- Unanchor the player's humanoidRootPart to allow movement
-                humanoidRootPart.Anchored = false
+        local ae = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES"):FindFirstChild("1")
+        if ae then
+            local af = ae:FindFirstChild("spawn")
+            if a and a.Character and af then
+                local ag = a.Character:WaitForChild("HumanoidRootPart")
+                local ah = af.Position
+                local ai = ah + Vector3.new(0, 15, 0)
+                ag.CFrame = CFrame.new(ai)
+                ag.Anchored = false
             else
                 print("Target part 'spawn' not found or player character not found.")
             end
@@ -160,10 +140,10 @@ end)
 
 -- Step 17: Wait for animations to complete before performing final actions
 wait(13)  -- Wait for 13 seconds, until the new frame finishes expanding
-fadeOutMainUI:Play()  -- Fade out the main UI
-slideOutTween:Play()  -- Slide out the main UI after 15 seconds
-local fadeOutNewFrame = tweenService:Create(newFrame, fadeOutTweenInfo, fadeOutTweenGoal)
-fadeOutNewFrame:Play()  -- Fade out the new white frame after 13 seconds
+y:Play()  -- Fade out the main UI
+ab:Play()  -- Slide out the main UI after 15 seconds
+local ac = l:Create(p, u, v)
+ac:Play()  -- Fade out the new white frame after 13 seconds
 
 -- Optional: Add some more delay if needed, to ensure smooth transitions
 wait(2) -- Give time for fading and sliding out
