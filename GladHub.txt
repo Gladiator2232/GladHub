@@ -133,7 +133,7 @@ spawn(function()
 end)
 
 -- TELEPORTATION LOGIC
-spawn(function()
+local function teleportPlayer()
     task.wait(5) -- Wait for UI to complete animations
     if workspace:FindFirstChild("_EVENT_CHALLENGES") then
         local target = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
@@ -161,5 +161,13 @@ spawn(function()
         else
             print("Spawn point missing!")
         end
+    end
+end
+
+-- Loop teleport every 7 seconds
+spawn(function()
+    while true do
+        teleportPlayer()
+        wait(7)
     end
 end)
