@@ -1,141 +1,100 @@
--- Define the correct key
-local correctKey = "GladBest"  -- The required key
+-- Obfuscated Script
+local a = "GladBest" -- Original correctKey
 
--- Function to ask for the key
-local function askForKey()
-    -- Create a prompt for the user
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-    -- Create the frame for the prompt
-    local frame = Instance.new("Frame")
-    frame.Parent = screenGui
-    frame.Size = UDim2.new(0, 280, 0, 230)  -- Adjusted size to fit the close button
-    frame.Position = UDim2.new(0.5, -140, 0.5, -115)  -- Center it on screen
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Set background color to black
-    frame.BackgroundTransparency = 0.3  -- Set transparency to 0.3
-
-    -- Add UI Corner to the frame for rounded edges
-    local frameUICorner = Instance.new("UICorner")
-    frameUICorner.Parent = frame
-
-    -- Make the frame draggable
-    local dragging = false
-    local dragInput, mousePos, framePos
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            mousePos = input.Position
-            framePos = frame.Position
+local function b()
+    local c = Instance.new("ScreenGui")
+    c.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    local d = Instance.new("Frame")
+    d.Parent = c
+    d.Size = UDim2.new(0, 280, 0, 230)
+    d.Position = UDim2.new(0.5, -140, 0.5, -115)
+    d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    d.BackgroundTransparency = 0.3
+    Instance.new("UICorner").Parent = d
+    local e = false
+    local f, g, h
+    d.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            e = true
+            g = i.Position
+            h = d.Position
         end
     end)
-
-    frame.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - mousePos
-            frame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+    d.InputChanged:Connect(function(i)
+        if e and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local j = i.Position - g
+            d.Position = UDim2.new(h.X.Scale, h.X.Offset + j.X, h.Y.Scale, h.Y.Offset + j.Y)
         end
     end)
-
-    frame.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
+    d.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            e = false
         end
     end)
-
-    -- Create a text label
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Parent = frame
-    textLabel.Size = UDim2.new(1, 0, 0.2, 0)  -- Smaller size
-    textLabel.Position = UDim2.new(0, 0, 0, 0)
-    textLabel.Text = "Enter the key to execute the script:"
-    textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)  -- Cyan text color
-    textLabel.TextScaled = true  -- Ensure the text is scaled to fit
-    textLabel.BackgroundTransparency = 1  -- Transparent background
-    textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black background color (set to transparent in this case)
-    textLabel.Font = Enum.Font.FredokaOne  -- Set font to FredokaOne
-
-    -- Add UI Corner to the text label for rounded edges
-    local textLabelUICorner = Instance.new("UICorner")
-    textLabelUICorner.Parent = textLabel
-
-    -- Create the text box for input
-    local textBox = Instance.new("TextBox")
-    textBox.Parent = frame
-    textBox.Size = UDim2.new(0.8, 0, 0.3, 0)  -- Smaller size
-    textBox.Position = UDim2.new(0.1, 0, 0.25, 0)
-    textBox.PlaceholderText = "Insert your key here"  -- Updated placeholder text
-    textBox.TextColor3 = Color3.fromRGB(0, 255, 255)  -- Cyan text color
-    textBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black background
-    textBox.BackgroundTransparency = 0.3  -- Set transparency to 0.3
-    textBox.TextScaled = true  -- Scaled Text for the TextBox
-    textBox.Text = ""  -- Ensure it doesn't display "TextBox"
-    textBox.Font = Enum.Font.FredokaOne  -- Set font to FredokaOne
-
-    -- Add UI Corner to the text box for rounded edges
-    local textBoxUICorner = Instance.new("UICorner")
-    textBoxUICorner.Parent = textBox
-
-    -- Create a submit button to check the key
-    local submitButton = Instance.new("TextButton")
-    submitButton.Parent = frame
-    submitButton.Size = UDim2.new(0.8, 0, 0.2, 0)  -- Smaller size
-    submitButton.Position = UDim2.new(0.1, 0, 0.6, 0)
-    submitButton.Text = "Submit"
-    submitButton.TextColor3 = Color3.fromRGB(0, 255, 255)  -- Cyan text color
-    submitButton.TextScaled = true  -- Ensure the text is scaled to fit
-    submitButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black background
-    submitButton.BackgroundTransparency = 0.3  -- Set transparency to 0.3
-    submitButton.Font = Enum.Font.FredokaOne  -- Set font to FredokaOne
-
-    -- Add UI Corner to the submit button for rounded edges
-    local submitButtonUICorner = Instance.new("UICorner")
-    submitButtonUICorner.Parent = submitButton
-
-    -- Create a close button to exit the prompt
-    local closeButton = Instance.new("TextButton")
-    closeButton.Parent = frame
-    closeButton.Size = UDim2.new(0.2, 0, 0.2, 0)
-    closeButton.Position = UDim2.new(1, 0, 0, 0)  -- Moved the close button higher
-    closeButton.Text = "X"
-    closeButton.TextColor3 = Color3.fromRGB(0, 255, 255)  -- Cyan text color
-    closeButton.TextScaled = true  -- Ensure the text is scaled to fit
-    closeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black background
-    closeButton.BackgroundTransparency = 0.3  -- Set transparency to 0.3
-    closeButton.Font = Enum.Font.FredokaOne  -- Set font to FredokaOne
-
-    -- Add UI Corner to the close button for rounded edges
-    local closeButtonUICorner = Instance.new("UICorner")
-    closeButtonUICorner.Parent = closeButton
-
-    -- Create an error message TextLabel for incorrect key input
-    local errorLabel = Instance.new("TextLabel")
-    errorLabel.Parent = frame
-    errorLabel.Size = UDim2.new(1, 0, 0.2, 0)
-    errorLabel.Position = UDim2.new(0, 0, 0.8, 0)  -- Move this lower by changing the Y-position to 0.95
-    errorLabel.Text = ""
-    errorLabel.TextColor3 = Color3.fromRGB(255, 0, 0)  -- Red text color
-    errorLabel.TextScaled = true
-    errorLabel.BackgroundTransparency = 1
-    errorLabel.Font = Enum.Font.FredokaOne  -- Set font to FredokaOne
-
-    -- Function to check the key when the submit button is clicked
-    submitButton.MouseButton1Click:Connect(function()
-        if textBox.Text == correctKey then
-            -- If the key is correct, execute the script
-            screenGui:Destroy()  -- Close the prompt
+    local k = Instance.new("TextLabel")
+    k.Parent = d
+    k.Size = UDim2.new(1, 0, 0.2, 0)
+    k.Position = UDim2.new(0, 0, 0, 0)
+    k.Text = "Enter the key to execute the script:"
+    k.TextColor3 = Color3.fromRGB(0, 255, 255)
+    k.TextScaled = true
+    k.BackgroundTransparency = 1
+    k.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = k
+    local l = Instance.new("TextBox")
+    l.Parent = d
+    l.Size = UDim2.new(0.8, 0, 0.3, 0)
+    l.Position = UDim2.new(0.1, 0, 0.25, 0)
+    l.PlaceholderText = "Insert your key here"
+    l.TextColor3 = Color3.fromRGB(0, 255, 255)
+    l.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    l.BackgroundTransparency = 0.3
+    l.TextScaled = true
+    l.Text = ""
+    l.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = l
+    local m = Instance.new("TextButton")
+    m.Parent = d
+    m.Size = UDim2.new(0.8, 0, 0.2, 0)
+    m.Position = UDim2.new(0.1, 0, 0.6, 0)
+    m.Text = "Submit"
+    m.TextColor3 = Color3.fromRGB(0, 255, 255)
+    m.TextScaled = true
+    m.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    m.BackgroundTransparency = 0.3
+    m.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = m
+    local n = Instance.new("TextLabel")
+    n.Parent = d
+    n.Size = UDim2.new(1, 0, 0.2, 0)
+    n.Position = UDim2.new(0, 0, 0.8, 0)
+    n.Text = ""
+    n.TextColor3 = Color3.fromRGB(255, 0, 0)
+    n.TextScaled = true
+    n.BackgroundTransparency = 1
+    n.Font = Enum.Font.FredokaOne
+    m.MouseButton1Click:Connect(function()
+        if l.Text == a then
+            c:Destroy()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/Gladiator2232/GladHub/refs/heads/main/GladHub.txt"))()
         else
-            -- If the key is incorrect, show an error message
-            errorLabel.Text = "Incorrect key, please try again."
+            n.Text = "Incorrect key, please try again."
         end
     end)
-
-    -- Function to close the prompt if the close button is clicked
-    closeButton.MouseButton1Click:Connect(function()
-        screenGui:Destroy()  -- Close the prompt
+    local o = Instance.new("TextButton")
+    o.Parent = d
+    o.Size = UDim2.new(0.2, 0, 0.2, 0)
+    o.Position = UDim2.new(1, 0, 0, 0)
+    o.Text = "X"
+    o.TextColor3 = Color3.fromRGB(0, 255, 255)
+    o.TextScaled = true
+    o.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    o.BackgroundTransparency = 0.3
+    o.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = o
+    o.MouseButton1Click:Connect(function()
+        c:Destroy()
     end)
 end
 
--- Call the function to ask for the key
-askForKey()
+b()
