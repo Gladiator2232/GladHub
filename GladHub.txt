@@ -1,188 +1,159 @@
-local Plr = game.Players.LocalPlayer
-local PN = game.Players.LocalPlayer.Character.Head._overhead.Frame.Name_Frame.Name_Text
-local PL = game.Players.LocalPlayer.Character.Head._overhead.Frame.Level_Frame.Level
-local Level = game.Players.LocalPlayer._stats.player_xp
-local gem = Plr._stats.gem_amount
-local gold = Plr._stats.gold_amount
-local Star = Plr._stats._resourceHolidayStars
-local candy = Plr._stats._resourceCandies
-if PN and PL and Level then
-	print("IdenityHide Successful")
-PN.Text = "GladHubOnTop"
-PL.Text = "GladHub"
-Level.Value = "3434343"
-gem.Value = "-1"
-gold.Value = "-1"
-Star.Value = "-1"
-candy.Value = "-1"
-	else
-		print("Not Found")
+-- CONFIGURATION SECTION
+local UIConfig = {
+    MainFrameSize = UDim2.new(0, 300, 0, 100),
+    MainFramePosition = UDim2.new(0.5, -150, 0.4, 0),
+    FrameColor = Color3.fromRGB(50, 50, 50),
+    GradientColors = {
+        Color3.fromRGB(0, 255, 255),
+        Color3.fromRGB(0, 100, 255)
+    },
+    LoadingText = {"Initializing...", "Loading Assets...", "Ready!"},
+    AnimationDuration = 2, -- General duration for animations
+    ExpandFrameDuration = 10,
+    FadeDuration = 1.5,
+    TweenStyles = {
+        InStyle = Enum.EasingStyle.Back,
+        InDirection = Enum.EasingDirection.Out,
+        OutStyle = Enum.EasingStyle.Quad,
+        OutDirection = Enum.EasingDirection.In,
+    }
+}
+
+-- HELPER FUNCTIONS
+local function createUICorner(parent, radius)
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = radius or UDim.new(0, 8)
+    uiCorner.Parent = parent
+    return uiCorner
 end
--- Get the LocalPlayer
+
+local function createGradient(parent, colors)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, colors[1]),
+        ColorSequenceKeypoint.new(1, colors[2])
+    })
+    gradient.Parent = parent
+    return gradient
+end
+
+local function tweenObject(object, properties, duration, easingStyle, easingDirection)
+    local tweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(duration, easingStyle, easingDirection)
+    local tween = tweenService:Create(object, tweenInfo, properties)
+    tween:Play()
+    return tween
+end
+
+local function fadeOutFrame(frame, duration, easingStyle, easingDirection)
+    -- Include the main frame itself
+    tweenObject(frame, {BackgroundTransparency = 1}, duration, easingStyle, easingDirection)
+    
+    -- Apply fade-out to all child elements
+    for _, child in ipairs(frame:GetDescendants()) do
+        if child:IsA("GuiObject") then
+            tweenObject(child, {BackgroundTransparency = 1}, duration, easingStyle, easingDirection)
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                tweenObject(child, {TextTransparency = 1}, duration, easingStyle, easingDirection)
+            end
+        end
+    end
+end
+
+-- MAIN UI CREATION
 local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Step 1: Create Frame1 (Main Frame)
-local frame1 = Instance.new("Frame")
-frame1.Parent = screenGui
-frame1.Size = UDim2.new(0, 282, 0, 44) -- Set size {0, 282},{0, 44}
-frame1.Position = UDim2.new(0.5, -141, 0.276, 0) -- Set to center horizontally and adjusted position vertically
-frame1.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background color
-frame1.BackgroundTransparency = 0.3 -- Semi-transparent background
+local mainFrame = Instance.new("Frame")
+mainFrame.Parent = screenGui
+mainFrame.Size = UIConfig.MainFrameSize
+mainFrame.Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0) -- Start off-screen below
+mainFrame.BackgroundColor3 = UIConfig.FrameColor
+mainFrame.BackgroundTransparency = 1 -- Invisible initially
+createUICorner(mainFrame)
+createGradient(mainFrame, UIConfig.GradientColors)
 
--- Step 2: Add UI Corner to Frame1
-local uiCorner1 = Instance.new("UICorner")
-uiCorner1.Parent = frame1
-
--- Step 3: Create Frame2 inside Frame1 (Inner frame for the label)
-local frame2 = Instance.new("Frame")
-frame2.Parent = frame1
-frame2.Size = UDim2.new(0, 268, 0, 31) -- Size {0, 268},{0, 31}
-frame2.Position = UDim2.new(0.028, 0, 0.145, 0) -- Position {0.028, 0},{0.145, 0}
-frame2.BackgroundColor3 = Color3.fromRGB(0, 255, 255) -- Cyan background color
-frame2.BackgroundTransparency = 0.3 -- Set transparency to 0.3
-
--- Step 4: Add UI Corner to Frame2
-local uiCorner2 = Instance.new("UICorner")
-uiCorner2.Parent = frame2
-
--- Step 5: Create TextLabel inside Frame2
 local textLabel = Instance.new("TextLabel")
-textLabel.Parent = frame2
-textLabel.Size = UDim2.new(0, 264, 0, 27) -- Size {0, 264},{0, 27}
-textLabel.Position = UDim2.new(0.007, 0, 0.06, 0) -- Position {0.007, 0},{0.06, 0}
-textLabel.BackgroundTransparency = 0.3 -- Set Text Background Transparency to 0.3
-textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background color
-textLabel.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan text color (0, 255, 255)
-textLabel.TextTransparency = 0.3 -- Text transparency
-textLabel.TextScaled = true -- Ensure the text is scaled to fit
+textLabel.Parent = mainFrame
+textLabel.Size = UDim2.new(1, -20, 0.5, -10)
+textLabel.Position = UDim2.new(0, 10, 0, 10)
+textLabel.Text = "Loading..."
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.TextScaled = true
+textLabel.Font = Enum.Font.GothamBold
 
--- Step 6: Add UI Corner to TextLabel
-local uiCorner3 = Instance.new("UICorner")
-uiCorner3.Parent = textLabel
+local progressBar = Instance.new("Frame")
+progressBar.Parent = mainFrame
+progressBar.Size = UDim2.new(0, 0, 0.1, 0)
+progressBar.Position = UDim2.new(0, 10, 0.8, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+progressBar.BackgroundTransparency = 0
+createUICorner(progressBar)
 
--- Step 7: Create a dynamic "Loading..." text
-local loadingText = {"Loading.", "Loading..", "Loading..."} -- Array of dynamic texts
+-- IN ANIMATION: Slide and Fade In
+tweenObject(mainFrame, 
+    {Position = UIConfig.MainFramePosition, BackgroundTransparency = 0}, 
+    UIConfig.AnimationDuration, 
+    UIConfig.TweenStyles.InStyle, 
+    UIConfig.TweenStyles.InDirection
+)
 
-local function updateTextLabel()
+-- LOADING TEXT ANIMATION
+spawn(function()
     local index = 1
     while true do
-        textLabel.Text = loadingText[index] -- Set the text to the current index
-        index = index + 1
-        if index > #loadingText then
-            index = 1 -- Reset to the first text after the last one
-        end
-        wait(0.5) -- Update every 0.5 seconds
-    end
-end
-
--- Run the dynamic loading text function
-spawn(updateTextLabel)
-
--- Step 8: Tween the Frame to appear (slide in from the right) over 2 seconds (faster)
-local tweenService = game:GetService("TweenService")
-
--- Slide-in effect from the right over 2 seconds using Sine easing (faster)
-local slideInTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Back, Enum.EasingDirection.InOut) -- Using Back easing and InOut direction
-local slideInTweenGoal = {Position = UDim2.new(0.5, -141, 0.5, -22)} -- Position centered (screen center)
-local slideInTween = tweenService:Create(frame1, slideInTweenInfo, slideInTweenGoal)
-
--- Step 9: Create the New White Frame (Under the Main UI)
-local newFrame = Instance.new("Frame")
-newFrame.Parent = screenGui
-newFrame.Size = UDim2.new(0, 1, 0, 6) -- Initially very small size {0, 1},{0, 6}
--- Adjust the Position to be more under the main UI frame
-newFrame.Position = UDim2.new(0.5, -230, 0.5, 44) -- Move it 44 pixels under the main frame
-newFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- White color background
-newFrame.BackgroundTransparency = 0 -- Solid white background
-
--- Step 10: Add UI Corner to New Frame
-local uiCorner4 = Instance.new("UICorner")
-uiCorner4.Parent = newFrame
-
--- Step 11: Tween the new Frame to expand (13 seconds long animation)
-local expandTweenInfo = TweenInfo.new(13, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- 13 seconds long expansion animation
-local expandTweenGoal = {Size = UDim2.new(0, 460, 0, 6)} -- Final size is {0, 460}, {0, 6}
-local expandTween = tweenService:Create(newFrame, expandTweenInfo, expandTweenGoal)
-
--- Step 12: Fade out the New Frame after 13 seconds
-local fadeOutTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.Out) -- 2 seconds fade out duration
-local fadeOutTweenGoal = {BackgroundTransparency = 1}  -- Fade out to full transparency
-
--- Step 13: Tween the Main UI (Frame1) to disappear (fade out after 15 seconds)
-local fadeOutMainUIInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- Fade out after 15 seconds
-local fadeOutMainUIGoal = {BackgroundTransparency = 1} -- Fade out the main UI
-local fadeOutMainUI = tweenService:Create(frame1, fadeOutMainUIInfo, fadeOutMainUIGoal)
-
--- Step 14: Tween the Main UI to slide out after 15 seconds
-local slideOutTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out) -- Slide out duration
-local slideOutTweenGoal = {Position = UDim2.new(1, 0, 0.5, -22)} -- Move to the right off-screen
-local slideOutTween = tweenService:Create(frame1, slideOutTweenInfo, slideOutTweenGoal)
-
--- Step 15: Play the animations for both the main UI and the new frame at the same time
-slideInTween:Play()  -- Start the slide-in animation for the main UI frame
-expandTween:Play()   -- Start the expand animation for the new frame
-
--- Step 16: Teleportation Logic (Runs at the same time as UI)
-spawn(function()
-    -- Check if _CHRISTMAS folder exists in Workspace
-    if workspace:FindFirstChild("_CHRISTMAS") then
-        print("GladHub Executed")
-        wait(15)
-        print("Loaded Successful")
-        
-        local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
-
-        -- Ensure that the player and target part exist
-        if player and player.Character and targetPart then
-            local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
-
-            -- Teleport the player by setting the HumanoidRootPart position
-            humanoidRootPart.CFrame = targetPart.CFrame
-        else
-            print("Target part 'Barrier' not found or player character not found.")
-        end
-    else
-        print("GladHub Executed")
-        wait(15)
-        print("Loaded Successful")
-
-        local lanes = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES"):FindFirstChild("1")
-        
-        -- Check if the "1" lane exists and has a "spawn" part
-        if lanes then
-            local targetPart = lanes:FindFirstChild("spawn")
-            
-            -- Ensure that the player and target part exist
-            if player and player.Character and targetPart then
-                local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
-
-                -- Get the position of the target part
-                local targetPosition = targetPart.Position
-                
-                -- Create a new position 2 studs above the target spawn
-                local newPosition = targetPosition + Vector3.new(0, 15, 0)
-
-                -- Teleport the player by setting the HumanoidRootPart position 2 studs above the spawn
-                humanoidRootPart.CFrame = CFrame.new(newPosition)
-
-                -- Unanchor the player's humanoidRootPart to allow movement
-                humanoidRootPart.Anchored = false
-            else
-                print("Target part 'spawn' not found or player character not found.")
-            end
-        else
-            print("Lane '1' not found in _BASES.player.LANES.")
-        end
+        textLabel.Text = UIConfig.LoadingText[index]
+        index = (index % #UIConfig.LoadingText) + 1
+        task.wait(1)
     end
 end)
 
--- Step 17: Wait for 15 seconds before starting the fade out animations
-wait(15)
-fadeOutMainUI:Play()  -- Start fading out the main UI
-slideOutTween:Play()  -- Start sliding out the main UI
+-- PROGRESS BAR EXPANSION
+spawn(function()
+    local tween = tweenObject(progressBar, {Size = UDim2.new(1, -20, 0.1, 0)}, UIConfig.ExpandFrameDuration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    tween.Completed:Wait()
+    textLabel.Text = "Complete!"
+    wait(1)
+    -- OUT ANIMATION: Fade and Slide Out
+    fadeOutFrame(mainFrame, UIConfig.FadeDuration, UIConfig.TweenStyles.OutStyle, UIConfig.TweenStyles.OutDirection)
+    tweenObject(mainFrame, 
+        {Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0)}, 
+        UIConfig.FadeDuration, 
+        UIConfig.TweenStyles.OutStyle, 
+        UIConfig.TweenStyles.OutDirection
+    )
+end)
 
--- Apply fade-out effect for the white frame after it finishes expanding
-local fadeOutNewFrame = tweenService:Create(newFrame, fadeOutTweenInfo, fadeOutTweenGoal)
-fadeOutNewFrame:Play()  -- Fade out the new white frame after 13 seconds
+-- TELEPORTATION LOGIC
+spawn(function()
+    task.wait(5) -- Wait for UI to complete animations
+    if workspace:FindFirstChild("_EVENT_CHALLENGES") then
+        local target = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
+        if player and player.Character and target then
+            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                humanoidRootPart.CFrame = target.CFrame
+                print("Teleport successful!")
+            else
+                print("HumanoidRootPart not found!")
+            end
+        else
+            print("Target or Character missing!")
+        end
+    else
+        print("Fallback teleport...")
+        local spawnPoint = workspace._BASES.player.LANES["1"]:FindFirstChild("spawn")
+        if spawnPoint then
+            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                humanoidRootPart.CFrame = spawnPoint.CFrame + Vector3.new(0, 5, 0)
+            else
+                print("HumanoidRootPart not found!")
+            end
+        else
+            print("Spawn point missing!")
+        end
+    end
+end)
