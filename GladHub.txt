@@ -135,32 +135,45 @@ end)
 -- TELEPORTATION LOGIC
 local function teleportPlayer()
     task.wait(5) -- Wait for UI to complete animations
-    if workspace:FindFirstChild("_EVENT_CHALLENGES") then
-        local target = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
-        if player and player.Character and target then
-            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                humanoidRootPart.CFrame = target.CFrame
-                print("Teleport successful!")
-            else
-                print("HumanoidRootPart not found!")
+    
+    -- Check if the _EVENT_CHALLENGES exists
+    local eventChallenges = workspace:FindFirstChild("_EVENT_CHALLENGES")
+    
+    -- If _EVENT_CHALLENGES exists, check for specific event parts
+    if eventChallenges then
+        local lobbyTemplate = eventChallenges.Lobbies:FindFirstChild("_lobbytemplate_event3")
+        if lobbyTemplate then
+            local barrierPart = lobbyTemplate:FindFirstChild("Barrier")
+            if barrierPart then
+                -- If found, teleport to Barrier part
+                if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = barrierPart.CFrame
+                    print("Teleport successful to Barrier!")
+                    return
+                else
+                    print("ERROR: HumanoidRootPart or Character not found!")
+                    return
+                end
             end
+        end
+    end
+
+    -- If no event was found or Barrier wasn't found, fallback to spawn teleport
+    print("Event or Barrier not found, teleporting to spawn point...")
+
+    -- Fallback: Try to find spawn part in _BASES
+    local spawnPoint = workspace._BASES and workspace._BASES.player and workspace._BASES.player.LANES and workspace._BASES.player.LANES["1"]:FindFirstChild("spawn")
+    
+    if spawnPoint then
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            -- If spawn found, teleport there
+            player.Character.HumanoidRootPart.CFrame = spawnPoint.CFrame + Vector3.new(0, 5, 0) -- Adding a small height offset
+            print("Teleport successful to spawn!")
         else
-            print("Target or Character missing!")
+            print("ERROR: HumanoidRootPart or Character not found!")
         end
     else
-        print("Fallback teleport...")
-        local spawnPoint = workspace._BASES.player.LANES["1"]:FindFirstChild("spawn")
-        if spawnPoint then
-            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                humanoidRootPart.CFrame = spawnPoint.CFrame + Vector3.new(0, 5, 0)
-            else
-                print("HumanoidRootPart not found!")
-            end
-        else
-            print("Spawn point missing!")
-        end
+        print("ERROR: Spawn point not found!")
     end
 end
 
@@ -168,6 +181,6 @@ end
 spawn(function()
     while true do
         teleportPlayer()
-        wait(7)
+        wait(3.5)
     end
 end)
