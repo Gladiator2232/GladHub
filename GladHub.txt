@@ -1,3 +1,12 @@
+local PN = game.Players.LocalPlayer.Character.Head._overhead.Frame.Name_Frame.Name_Text
+local PL = game.Players.LocalPlayer.Character.Head._overhead.Frame.Level_Frame.Level
+if PN and PL then
+	print("IdenityHide Successful")
+PN.Text = "GladHubOnTop"
+PL.Text = "GladHub"
+	else
+		print("Not Found")
+end
 -- Get the LocalPlayer
 local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
