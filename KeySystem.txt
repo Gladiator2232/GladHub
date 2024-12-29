@@ -1,100 +1,128 @@
--- Obfuscated Script
-local a = "GladBest" -- Original correctKey
+local correctKey = "GladBest"  -- The correct key to unlock the script
 
-local function b()
-    local c = Instance.new("ScreenGui")
-    c.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    local d = Instance.new("Frame")
-    d.Parent = c
-    d.Size = UDim2.new(0, 280, 0, 230)
-    d.Position = UDim2.new(0.5, -140, 0.5, -115)
-    d.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    d.BackgroundTransparency = 0.3
-    Instance.new("UICorner").Parent = d
-    local e = false
-    local f, g, h
-    d.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            e = true
-            g = i.Position
-            h = d.Position
+-- Function to create a draggable UI
+local function createDraggableUI()
+    -- Create ScreenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    -- Create Frame (Main UI Container)
+    local frame = Instance.new("Frame")
+    frame.Parent = screenGui
+    frame.Size = UDim2.new(0, 280, 0, 230)
+    frame.Position = UDim2.new(0.5, -140, 0.5, -115)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.3
+    Instance.new("UICorner").Parent = frame
+
+    -- Draggable functionality
+    local dragging = false
+    local dragStart, dragOffset
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            dragOffset = frame.Position
         end
     end)
-    d.InputChanged:Connect(function(i)
-        if e and i.UserInputType == Enum.UserInputType.MouseMovement then
-            local j = i.Position - g
-            d.Position = UDim2.new(h.X.Scale, h.X.Offset + j.X, h.Y.Scale, h.Y.Offset + j.Y)
+
+    frame.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(dragOffset.X.Scale, dragOffset.X.Offset + delta.X, dragOffset.Y.Scale, dragOffset.Y.Offset + delta.Y)
         end
     end)
-    d.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            e = false
+
+    frame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
         end
     end)
-    local k = Instance.new("TextLabel")
-    k.Parent = d
-    k.Size = UDim2.new(1, 0, 0.2, 0)
-    k.Position = UDim2.new(0, 0, 0, 0)
-    k.Text = "Enter the key to execute the script:"
-    k.TextColor3 = Color3.fromRGB(0, 255, 255)
-    k.TextScaled = true
-    k.BackgroundTransparency = 1
-    k.Font = Enum.Font.FredokaOne
-    Instance.new("UICorner").Parent = k
-    local l = Instance.new("TextBox")
-    l.Parent = d
-    l.Size = UDim2.new(0.8, 0, 0.3, 0)
-    l.Position = UDim2.new(0.1, 0, 0.25, 0)
-    l.PlaceholderText = "Insert your key here"
-    l.TextColor3 = Color3.fromRGB(0, 255, 255)
-    l.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    l.BackgroundTransparency = 0.3
-    l.TextScaled = true
-    l.Text = ""
-    l.Font = Enum.Font.FredokaOne
-    Instance.new("UICorner").Parent = l
-    local m = Instance.new("TextButton")
-    m.Parent = d
-    m.Size = UDim2.new(0.8, 0, 0.2, 0)
-    m.Position = UDim2.new(0.1, 0, 0.6, 0)
-    m.Text = "Submit"
-    m.TextColor3 = Color3.fromRGB(0, 255, 255)
-    m.TextScaled = true
-    m.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    m.BackgroundTransparency = 0.3
-    m.Font = Enum.Font.FredokaOne
-    Instance.new("UICorner").Parent = m
-    local n = Instance.new("TextLabel")
-    n.Parent = d
-    n.Size = UDim2.new(1, 0, 0.2, 0)
-    n.Position = UDim2.new(0, 0, 0.8, 0)
-    n.Text = ""
-    n.TextColor3 = Color3.fromRGB(255, 0, 0)
-    n.TextScaled = true
-    n.BackgroundTransparency = 1
-    n.Font = Enum.Font.FredokaOne
-    m.MouseButton1Click:Connect(function()
-        if l.Text == a then
-            c:Destroy()
+
+    -- Create UI Text (Title)
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Parent = frame
+    titleLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.Text = "Enter the key to execute the script:"
+    titleLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+    titleLabel.TextScaled = true
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = titleLabel
+
+    -- Create TextBox for key input
+    local keyInput = Instance.new("TextBox")
+    keyInput.Parent = frame
+    keyInput.Size = UDim2.new(0.8, 0, 0.3, 0)
+    keyInput.Position = UDim2.new(0.1, 0, 0.25, 0)
+    keyInput.PlaceholderText = "Insert your key here"
+    keyInput.TextColor3 = Color3.fromRGB(0, 255, 255)
+    keyInput.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    keyInput.BackgroundTransparency = 0.3
+    keyInput.TextScaled = true
+    keyInput.Text = ""
+    keyInput.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = keyInput
+
+    -- Create Submit Button
+    local submitButton = Instance.new("TextButton")
+    submitButton.Parent = frame
+    submitButton.Size = UDim2.new(0.8, 0, 0.2, 0)
+    submitButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+    submitButton.Text = "Submit"
+    submitButton.TextColor3 = Color3.fromRGB(0, 255, 255)
+    submitButton.TextScaled = true
+    submitButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    submitButton.BackgroundTransparency = 0.3
+    submitButton.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = submitButton
+
+    -- Create TextLabel for error message
+    local errorLabel = Instance.new("TextLabel")
+    errorLabel.Parent = frame
+    errorLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    errorLabel.Position = UDim2.new(0, 0, 0.8, 0)
+    errorLabel.Text = ""
+    errorLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    errorLabel.TextScaled = true
+    errorLabel.BackgroundTransparency = 1
+    errorLabel.Font = Enum.Font.FredokaOne
+
+    -- Handle Submit Button Click
+    submitButton.MouseButton1Click:Connect(function()
+        if keyInput.Text == correctKey then
+            screenGui:Destroy()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/Gladiator2232/GladHub/refs/heads/main/GladHub.txt"))()
         else
-            n.Text = "Incorrect key, please try again."
+            errorLabel.Text = "Incorrect key, please try again."
+            -- Apply shake animation for error
+            local tweenService = game:GetService("TweenService")
+            local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 3, true)
+            local tweenGoal = {Position = UDim2.new(0, 10, 0.8, 0)}  -- Shake effect
+            local shakeTween = tweenService:Create(frame, tweenInfo, tweenGoal)
+            shakeTween:Play()
         end
     end)
-    local o = Instance.new("TextButton")
-    o.Parent = d
-    o.Size = UDim2.new(0.2, 0, 0.2, 0)
-    o.Position = UDim2.new(1, 0, 0, 0)
-    o.Text = "X"
-    o.TextColor3 = Color3.fromRGB(0, 255, 255)
-    o.TextScaled = true
-    o.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    o.BackgroundTransparency = 0.3
-    o.Font = Enum.Font.FredokaOne
-    Instance.new("UICorner").Parent = o
-    o.MouseButton1Click:Connect(function()
-        c:Destroy()
+
+    -- Create Close Button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Parent = frame
+    closeButton.Size = UDim2.new(0.2, 0, 0.2, 0)
+    closeButton.Position = UDim2.new(1, 0, 0, 0)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(0, 255, 255)
+    closeButton.TextScaled = true
+    closeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    closeButton.BackgroundTransparency = 0.3
+    closeButton.Font = Enum.Font.FredokaOne
+    Instance.new("UICorner").Parent = closeButton
+
+    -- Handle Close Button Click
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
     end)
 end
 
-b()
+-- Execute the function to create the UI
+createDraggableUI()
