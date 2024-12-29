@@ -1,3 +1,9 @@
+-- Hide the leaderboard
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+
+-- Hide the chat
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+
 -- CONFIGURATION SECTION
 local UIConfig = {
     MainFrameSize = UDim2.new(0, 300, 0, 100),
