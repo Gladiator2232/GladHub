@@ -7,7 +7,7 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 local frame1 = Instance.new("Frame")
 frame1.Parent = screenGui
 frame1.Size = UDim2.new(0, 282, 0, 44) -- Set size {0, 282},{0, 44}
-frame1.Position = UDim2.new(1, 0, 0.276, 0) -- Start off-screen to the right (position is outside the screen initially)
+frame1.Position = UDim2.new(0.5, -141, 0.276, 0) -- Set to center horizontally and adjusted position vertically
 frame1.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background color
 frame1.BackgroundTransparency = 0.3 -- Semi-transparent background
 
@@ -32,12 +32,11 @@ local textLabel = Instance.new("TextLabel")
 textLabel.Parent = frame2
 textLabel.Size = UDim2.new(0, 264, 0, 27) -- Size {0, 264},{0, 27}
 textLabel.Position = UDim2.new(0.007, 0, 0.06, 0) -- Position {0.007, 0},{0.06, 0}
-textLabel.BackgroundTransparency = 0.3 -- Text Background Transparency to 0.3
+textLabel.BackgroundTransparency = 0.3 -- Set Text Background Transparency to 0.3
 textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Black background color
 textLabel.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan text color (0, 255, 255)
 textLabel.TextTransparency = 0.3 -- Text transparency
 textLabel.TextScaled = true -- Ensure the text is scaled to fit
-textLabel.Font = Enum.Font.FredokaOne -- Set font to Fredoka One
 
 -- Step 6: Add UI Corner to TextLabel
 local uiCorner3 = Instance.new("UICorner")
@@ -65,7 +64,7 @@ spawn(updateTextLabel)
 local tweenService = game:GetService("TweenService")
 
 -- Slide-in effect from the right over 2 seconds using Sine easing (faster)
-local slideInTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut) -- 2 seconds for faster animation
+local slideInTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Back, Enum.EasingDirection.InOut) -- Using Back easing and InOut direction
 local slideInTweenGoal = {Position = UDim2.new(0.5, -141, 0.5, -22)} -- Position centered (screen center)
 local slideInTween = tweenService:Create(frame1, slideInTweenInfo, slideInTweenGoal)
 
@@ -159,12 +158,11 @@ spawn(function()
     end
 end)
 
--- Step 17: Wait for animations to complete before performing final actions
-wait(13)  -- Wait for 13 seconds, until the new frame finishes expanding
-fadeOutMainUI:Play()  -- Fade out the main UI
-slideOutTween:Play()  -- Slide out the main UI after 15 seconds
+-- Step 17: Wait for 15 seconds before starting the fade out animations
+wait(15)
+fadeOutMainUI:Play()  -- Start fading out the main UI
+slideOutTween:Play()  -- Start sliding out the main UI
+
+-- Apply fade-out effect for the white frame after it finishes expanding
 local fadeOutNewFrame = tweenService:Create(newFrame, fadeOutTweenInfo, fadeOutTweenGoal)
 fadeOutNewFrame:Play()  -- Fade out the new white frame after 13 seconds
-
--- Optional: Add some more delay if needed, to ensure smooth transitions
-wait(2) -- Give time for fading and sliding out
