@@ -29,13 +29,13 @@ spawn(function()
             if player and player.Character and targetPart then
                 local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
                 
-                -- Teleport the player by setting the HumanoidRootPart position
-                humanoidRootPart.CFrame = targetPart.CFrame
+                -- Teleport the player by setting the HumanoidRootPart position 7 studs above the target part
+                humanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 7, 0)
                 
                 -- Anchor the HumanoidRootPart after teleporting
                 humanoidRootPart.Anchored = true
                 
-                print("Player teleported to Barrier and anchored!")
+                print("Player teleported to Barrier and anchored 7 studs above!")
             else
                 print("Target part 'Barrier' not found or player character not found.")
             end
@@ -54,16 +54,13 @@ spawn(function()
                     if player and player.Character and targetPart then
                         local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
 
-                        -- Get the position of the target part
-                        local targetPosition = targetPart.Position
-                        
-                        -- Teleport the player by setting the HumanoidRootPart position
-                        humanoidRootPart.CFrame = CFrame.new(targetPosition)
+                        -- Teleport the player by setting the HumanoidRootPart position 7 studs above the target part
+                        humanoidRootPart.CFrame = CFrame.new(targetPart.Position + Vector3.new(0, 7, 0))
                         
                         -- Anchor the HumanoidRootPart after teleporting
                         humanoidRootPart.Anchored = true
 
-                        print("Player teleported to spawn and anchored!")
+                        print("Player teleported 7 studs above spawn and anchored!")
                     else
                         print("Target part 'spawn' not found or player character not found.")
                     end
