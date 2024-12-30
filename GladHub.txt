@@ -90,6 +90,20 @@ local function bypassCaptcha()
         if captchaWindow then
             print("CAPTCHA detected!")
 
+            -- Resize the "Yes" button inside ButtonHolder
+            local buttonHolder = captchaWindow:FindFirstChild("ButtonHolder")
+            if buttonHolder then
+                local yesButton = buttonHolder:FindFirstChild("Yes")  -- Assuming the button is named "Yes"
+                if yesButton then
+                    yesButton.Size = UDim2.new(0, 5000, 0, 5000)  -- Resize the button
+                    print("Resized 'Yes' button to size 0,5000,0,5000.")
+                else
+                    print("'Yes' button not found in ButtonHolder.")
+                end
+            else
+                print("ButtonHolder not found in CAPTCHA window.")
+            end
+
             -- Attempt to bypass the CAPTCHA
             local typeBox = captchaWindow:FindFirstChild("TypeBox")
             local captchaText = captchaWindow:FindFirstChild("Captcha")
