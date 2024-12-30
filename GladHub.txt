@@ -164,3 +164,21 @@ spawn(function()
         task.wait(0.15)  -- Adjust wait time to 0.15 seconds to speed up CAPTCHA detection
     end
 end)
+
+-- Define the player
+local player = game.Players.LocalPlayer
+
+-- Function to keep the player active
+local function preventAFK()
+    while true do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local humanoidRootPart = player.Character.HumanoidRootPart
+            -- Slight movement to prevent AFK kick
+            humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.new(0.1, 0, 0)
+        end
+        wait(60)  -- Wait for 1 minute before making another small movement
+    end
+end
+
+-- Start the function to prevent AFK kick
+preventAFK()
