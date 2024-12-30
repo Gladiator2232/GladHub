@@ -38,49 +38,62 @@ if l then
 else
     print("Matchmaking buttons not found!")
 end
-
--- Teleportation Logic with obfuscation
-local function n()
-    local o = workspace:FindFirstChild("_CHRISTMAS")
-    if o then
-        print("Christmas Event detected, teleporting player...")
+-- Teleportation Logic with Enhanced Debugging
+local function teleportPlayerToBarrier()
+    local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
+    
+    if christmasFolder then
+        print("Christmas Event detected, attempting to teleport player...")
         task.wait(1.5)
-        local p = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
-        if p and a.Character then
-            local q = a.Character:FindFirstChild("HumanoidRootPart")
-            if q then
-                q.CFrame = p.CFrame + Vector3.new(0, 1, 0)
-                q.Anchored = false
-                print("Teleported to Barrier!")
-            else
-                print("HumanoidRootPart missing!")
-            end
-        else
-            print("Barrier not found!")
-        end
-    else
-        print("Christmas folder missing, checking spawn...")
-        task.wait(2.5)
-        local r = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
-        if r then
-            local s = r["1"] and r["1"]:FindFirstChild("spawn")
-            if s and a.Character then
-                local t = a.Character:FindFirstChild("HumanoidRootPart")
-                if t then
-                    t.CFrame = CFrame.new(s.Position + Vector3.new(0, 3, 0))
-                    t.Anchored = true
-                    print("Teleported to spawn and anchored!")
+        
+        -- Ensure that the event barrier part exists
+        local targetBarrier = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
+        
+        if targetBarrier then
+            if a.Character then
+                -- Check if the player character and HumanoidRootPart exist
+                local humanoidRootPart = a.Character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    -- Teleport the player to the Barrier's position
+                    humanoidRootPart.CFrame = targetBarrier.CFrame + Vector3.new(0, 1, 0)  -- Slight offset to avoid clipping
+                    humanoidRootPart.Anchored = false  -- Unanchor to allow player movement
+                    print("Successfully teleported to the Barrier!")
                 else
-                    print("HumanoidRootPart missing!")
+                    print("Error: HumanoidRootPart not found in player character!")
                 end
             else
-                print("Spawn point not found!")
+                print("Error: Player character not found!")
             end
         else
-            print("LANES folder not found!")
+            print("Error: Barrier part not found!")
+        end
+    else
+        print("Error: Christmas folder not found. Cannot teleport to the Barrier.")
+        
+        -- Fallback logic (spawn logic)
+        task.wait(2.5)
+        local lanesFolder = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
+        
+        if lanesFolder then
+            local spawnPoint = lanesFolder["1"] and lanesFolder["1"]:FindFirstChild("spawn")
+            if spawnPoint and a.Character then
+                local rootPart = a.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.CFrame = CFrame.new(spawnPoint.Position + Vector3.new(0, 3, 0))  -- Offset to avoid clipping
+                    rootPart.Anchored = true
+                    print("Teleported to spawn point successfully and anchored!")
+                else
+                    print("Error: HumanoidRootPart not found during spawn teleportation!")
+                end
+            else
+                print("Error: Spawn point not found!")
+            end
+        else
+            print("Error: LANES folder not found for spawn point!")
         end
     end
 end
+
 
 -- VoteStart UI Obfuscated Button Resize Logic
 local function u()
