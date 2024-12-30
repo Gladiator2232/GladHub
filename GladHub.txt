@@ -1,25 +1,33 @@
 -- CAPTCHA BYPASS LOGIC
 local function bypassCaptcha()
-    -- Wait for CaptchaWindow to appear
-    local gui = game.Players.LocalPlayer:WaitForChild("PlayerGui", 5) -- Wait for PlayerGui
-    local notificationWindows = gui and gui:WaitForChild("NotificationWindows", 5)
-    local popups = notificationWindows and notificationWindows:WaitForChild("Popups", 5)
-    local captchaWindow = popups and popups:WaitForChild("CaptchaWindow", 5)
+    print("Waiting for CAPTCHA window to appear...")
 
-    if captchaWindow then
-        print("There is a Captcha")
-        print("Bypassing it")
-        local typeBox = captchaWindow:FindFirstChild("TypeBox")
-        local captchaText = captchaWindow:FindFirstChild("Captcha")
+    -- Wait until the CAPTCHA window exists
+    while true do
+        local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+        local notificationWindows = gui and gui:FindFirstChild("NotificationWindows")
+        local popups = notificationWindows and notificationWindows:FindFirstChild("Popups")
+        local captchaWindow = popups and popups:FindFirstChild("CaptchaWindow")
 
-        if typeBox and captchaText then
-            typeBox.Text = captchaText.Text -- Copy the Captcha text to the input
-            print("Captcha bypassed successfully!")
-        else
-            print("ERROR: TypeBox or Captcha text not found!")
+        if captchaWindow then
+            print("CAPTCHA detected!")
+            
+            -- Attempt to bypass the CAPTCHA
+            local typeBox = captchaWindow:FindFirstChild("TypeBox")
+            local captchaText = captchaWindow:FindFirstChild("Captcha")
+
+            if typeBox and captchaText then
+                print("Bypassing CAPTCHA...")
+                typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
+                print("CAPTCHA bypassed successfully!")
+                break -- Exit the loop once the CAPTCHA is bypassed
+            else
+                print("ERROR: CAPTCHA elements not found! Retrying...")
+            end
         end
-    else
-        print("No Captcha found or timed out!")
+
+        -- Wait briefly before retrying
+        task.wait(0.5)
     end
 end
 
