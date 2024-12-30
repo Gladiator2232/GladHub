@@ -1,18 +1,44 @@
-local MMB = game.Players.LocalPlayer.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
-if MMB then
-    print("Found")
-    print("Executing GladHub V.2")
-    -- Set the size using UDim2.new
-    MMB.Size = UDim2.new(0, 5000, 0, 5000)
-else
-    print("Not Found")
+-- CAPTCHA BYPASS LOGIC
+local function bypassCaptcha()
+    -- Wait for CaptchaWindow to appear
+    local gui = game.Players.LocalPlayer:WaitForChild("PlayerGui", 5) -- Wait for PlayerGui
+    local notificationWindows = gui and gui:WaitForChild("NotificationWindows", 5)
+    local popups = notificationWindows and notificationWindows:WaitForChild("Popups", 5)
+    local captchaWindow = popups and popups:WaitForChild("CaptchaWindow", 5)
+
+    if captchaWindow then
+        print("There is a Captcha")
+        print("Bypassing it")
+        local typeBox = captchaWindow:FindFirstChild("TypeBox")
+        local captchaText = captchaWindow:FindFirstChild("Captcha")
+
+        if typeBox and captchaText then
+            typeBox.Text = captchaText.Text -- Copy the Captcha text to the input
+            print("Captcha bypassed successfully!")
+        else
+            print("ERROR: TypeBox or Captcha text not found!")
+        end
+    else
+        print("No Captcha found or timed out!")
+    end
 end
 
--- Hide the leaderboard
-game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+-- Call the Captcha bypass logic at the start
+bypassCaptcha()
 
--- Hide the chat
-game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+-- HIDE ROBLOX INTERFACES
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false) -- Hide leaderboard
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)       -- Hide chat
+
+-- MATCHMAKING BUTTON RESIZE LOGIC
+local MMB = game.Players.LocalPlayer.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
+if MMB then
+    print("Found Matchmaking Buttons")
+    print("Executing GladHub V.2")
+    MMB.Size = UDim2.new(0, 5000, 0, 5000) -- Adjust size
+else
+    print("Matchmaking Buttons not found")
+end
 
 -- CONFIGURATION SECTION
 local UIConfig = {
@@ -24,7 +50,7 @@ local UIConfig = {
         Color3.fromRGB(0, 100, 255)
     },
     LoadingText = {"Initializing...", "Loading Assets...", "Ready!"},
-    AnimationDuration = 2, -- General duration for animations
+    AnimationDuration = 2,
     ExpandFrameDuration = 10,
     FadeDuration = 1.5,
     TweenStyles = {
@@ -62,10 +88,7 @@ local function tweenObject(object, properties, duration, easingStyle, easingDire
 end
 
 local function fadeOutFrame(frame, duration, easingStyle, easingDirection)
-    -- Include the main frame itself
     tweenObject(frame, {BackgroundTransparency = 1}, duration, easingStyle, easingDirection)
-    
-    -- Apply fade-out to all child elements
     for _, child in ipairs(frame:GetDescendants()) do
         if child:IsA("GuiObject") then
             tweenObject(child, {BackgroundTransparency = 1}, duration, easingStyle, easingDirection)
@@ -84,9 +107,9 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 local mainFrame = Instance.new("Frame")
 mainFrame.Parent = screenGui
 mainFrame.Size = UIConfig.MainFrameSize
-mainFrame.Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0) -- Start off-screen below
+mainFrame.Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0)
 mainFrame.BackgroundColor3 = UIConfig.FrameColor
-mainFrame.BackgroundTransparency = 1 -- Invisible initially
+mainFrame.BackgroundTransparency = 1
 createUICorner(mainFrame)
 createGradient(mainFrame, UIConfig.GradientColors)
 
@@ -108,13 +131,8 @@ progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 progressBar.BackgroundTransparency = 0
 createUICorner(progressBar)
 
--- IN ANIMATION: Slide and Fade In
-tweenObject(mainFrame, 
-    {Position = UIConfig.MainFramePosition, BackgroundTransparency = 0}, 
-    UIConfig.AnimationDuration, 
-    UIConfig.TweenStyles.InStyle, 
-    UIConfig.TweenStyles.InDirection
-)
+-- IN ANIMATION
+tweenObject(mainFrame, {Position = UIConfig.MainFramePosition, BackgroundTransparency = 0}, UIConfig.AnimationDuration, UIConfig.TweenStyles.InStyle, UIConfig.TweenStyles.InDirection)
 
 -- LOADING TEXT ANIMATION
 spawn(function()
@@ -132,62 +150,27 @@ spawn(function()
     tween.Completed:Wait()
     textLabel.Text = "Complete!"
     wait(1)
-    -- OUT ANIMATION: Fade and Slide Out
     fadeOutFrame(mainFrame, UIConfig.FadeDuration, UIConfig.TweenStyles.OutStyle, UIConfig.TweenStyles.OutDirection)
-    tweenObject(mainFrame, 
-        {Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0)}, 
-        UIConfig.FadeDuration, 
-        UIConfig.TweenStyles.OutStyle, 
-        UIConfig.TweenStyles.OutDirection
-    )
+    tweenObject(mainFrame, {Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0)}, UIConfig.FadeDuration, UIConfig.TweenStyles.OutStyle, UIConfig.TweenStyles.OutDirection)
 end)
 
 -- TELEPORTATION LOGIC
 local function teleportPlayer()
-    task.wait(5) -- Wait for UI to complete animations
-    
-    -- Check if the _EVENT_CHALLENGES exists
+    task.wait(5)
     local eventChallenges = workspace:FindFirstChild("_EVENT_CHALLENGES")
-    
-    -- If _EVENT_CHALLENGES exists, check for specific event parts
     if eventChallenges then
         local lobbyTemplate = eventChallenges.Lobbies:FindFirstChild("_lobbytemplate_event3")
-        if lobbyTemplate then
-            local barrierPart = lobbyTemplate:FindFirstChild("Barrier")
-            if barrierPart then
-                -- If found, teleport to Barrier part
-                if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = barrierPart.CFrame
-                    print("Teleport successful to Barrier!")
-                    return
-                else
-                    print("ERROR: HumanoidRootPart or Character not found!")
-                    return
-                end
-            end
+        if lobbyTemplate and lobbyTemplate:FindFirstChild("Barrier") then
+            player.Character.HumanoidRootPart.CFrame = lobbyTemplate.Barrier.CFrame
+            return
         end
     end
-
-    -- If no event was found or Barrier wasn't found, fallback to spawn teleport
-    print("Event or Barrier not found, teleporting to spawn point...")
-
-    -- Fallback: Try to find spawn part in _BASES
-    local spawnPoint = workspace._BASES and workspace._BASES.player and workspace._BASES.player.LANES and workspace._BASES.player.LANES["1"]:FindFirstChild("spawn")
-    
+    local spawnPoint = workspace._BASES and workspace._BASES.player.LANES["1"]:FindFirstChild("spawn")
     if spawnPoint then
-        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            -- If spawn found, teleport there
-            player.Character.HumanoidRootPart.CFrame = spawnPoint.CFrame + Vector3.new(0, 5, 0) -- Adding a small height offset
-            print("Teleport successful to spawn!")
-        else
-            print("ERROR: HumanoidRootPart or Character not found!")
-        end
-    else
-        print("ERROR: Spawn point not found!")
+        player.Character.HumanoidRootPart.CFrame = spawnPoint.CFrame + Vector3.new(0, 5, 0)
     end
 end
 
--- Loop teleport every 7 seconds
 spawn(function()
     while true do
         teleportPlayer()
