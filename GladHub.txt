@@ -28,9 +28,14 @@ spawn(function()
             -- Ensure that the player and target part exist
             if player and player.Character and targetPart then
                 local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
+                
                 -- Teleport the player by setting the HumanoidRootPart position
                 humanoidRootPart.CFrame = targetPart.CFrame
-                print("Player teleported to Barrier!")
+                
+                -- Anchor the HumanoidRootPart after teleporting
+                humanoidRootPart.Anchored = true
+                
+                print("Player teleported to Barrier and anchored!")
             else
                 print("Target part 'Barrier' not found or player character not found.")
             end
@@ -52,18 +57,13 @@ spawn(function()
                         -- Get the position of the target part
                         local targetPosition = targetPart.Position
                         
-                        -- Create a new position 2 studs above the target spawn
-                        local newPosition = targetPosition + Vector3.new(0, 0, 0)
-
-                        -- Anchor the HumanoidRootPart before teleportation
+                        -- Teleport the player by setting the HumanoidRootPart position
+                        humanoidRootPart.CFrame = CFrame.new(targetPosition)
+                        
+                        -- Anchor the HumanoidRootPart after teleporting
                         humanoidRootPart.Anchored = true
 
-                        -- Teleport the player by setting the HumanoidRootPart position
-                        humanoidRootPart.CFrame = CFrame.new(newPosition)
-
-                        -- Unanchor the player's humanoidRootPart after teleportation
-                        humanoidRootPart.Anchored = false
-                        print("Player teleported to spawn!")
+                        print("Player teleported to spawn and anchored!")
                     else
                         print("Target part 'spawn' not found or player character not found.")
                     end
@@ -124,7 +124,7 @@ local function bypassCaptcha()
         -- Wait briefly before checking again (2x faster)
         task.wait(0.5) -- Adjust the wait time to 0.5 for faster detection
     end
-end
+end)
 
 -- TELEPORT TO BARRIER AND START CAPTCHA CHECKING IN PARALLEL
 spawn(function()
