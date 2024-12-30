@@ -214,13 +214,26 @@ local function bypassCaptcha()
             print("CAPTCHA detected!")
 
             -- Attempt to bypass the CAPTCHA
+            local typeBox = captchaWindow:FindFirstChild("TypeBox")
+            local captchaText = captchaWindow:FindFirstChild("Captcha")
+
+            if typeBox and captchaText then
+                print("Bypassing CAPTCHA...")
+                typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
+                print("CAPTCHA bypassed successfully!")
+                return -- CAPTCHA bypass complete, exit function
+            else
+                print("ERROR: CAPTCHA elements not found! Retrying...")
+            end
+
+            -- Try to hide "TypeFrame" button if present
             local typeFrame = captchaWindow:FindFirstChild("TypeFrame")
             if typeFrame then
                 print("Bypassing CAPTCHA...")
                 typeFrame.TextButton.Visible = false
             end
         else
-            wait(1) -- Check again every second
+            wait(0.002) -- Check again every 0.002 seconds
         end
     end
 end
