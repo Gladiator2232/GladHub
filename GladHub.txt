@@ -139,26 +139,65 @@ spawn(function()
     )
 end)
 
--- TELEPORTATION LOGIC (with continuous teleporting)
-local function teleportPlayerToBarrier()
-    print("Teleporting player to Barrier...")
+-- TELEPORTATION LOGIC (with 1-second pause between teleport attempts)
+spawn(function()
+    while true do
+        -- Check if _CHRISTMAS folder exists in Workspace
+        local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
+        if christmasFolder then
+            print("GladHub Executed - Christmas Event")
+            -- Immediately check and teleport without wait
+            local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
 
-    local eventChallenges = workspace:FindFirstChild("_EVENT_CHALLENGES")
-    if eventChallenges then
-        local lobbyTemplate = eventChallenges.Lobbies:FindFirstChild("_lobbytemplate_event3")
-        if lobbyTemplate and lobbyTemplate:FindFirstChild("Barrier") then
-            -- Teleport the player to the Barrier part
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = lobbyTemplate.Barrier.CFrame
-            print("Player teleported to Barrier!")
-            return true
+            -- Ensure that the player and target part exist
+            if player and player.Character and targetPart then
+                local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
+                -- Teleport the player directly by setting the HumanoidRootPart position
+                humanoidRootPart.CFrame = targetPart.CFrame
+                print("Player teleported to Barrier!")
+            else
+                print("Target part 'Barrier' not found or player character not found.")
+            end
         else
-            print("ERROR: Barrier not found!")
-            return false
+            print("Christmas folder not found, checking for spawn logic")
+            -- Immediately check and teleport without wait
+            local lanesFolder = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES")
+            if lanesFolder then
+                local lane1 = lanesFolder:FindFirstChild("1")
+                if lane1 then
+                    local targetPart = lane1:FindFirstChild("spawn")
+
+                    -- Ensure that the player and target part exist
+                    if player and player.Character and targetPart then
+                        local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
+
+                        -- Get the position of the target part
+                        local targetPosition = targetPart.Position
+                        
+                        -- Create a new position 2 studs above the target spawn
+                        local newPosition = targetPosition + Vector3.new(0, 15, 0)
+
+                        -- Teleport the player directly to the new position
+                        humanoidRootPart.CFrame = CFrame.new(newPosition)
+
+                        -- Unanchor the player's humanoidRootPart to allow movement
+                        humanoidRootPart.Anchored = false
+                        print("Player teleported to spawn!")
+                    else
+                        print("Target part 'spawn' not found or player character not found.")
+                    end
+                else
+                    print("Lane '1' not found in _BASES.player.LANES.")
+                end
+            else
+                print("LANES folder not found in _BASES.player.")
+            end
         end
+
+        -- Add a 1-second pause to avoid crashes
+        wait(1)
     end
-    print("ERROR: _EVENT_CHALLENGES not found!")
-    return false
-end
+end)
 
 -- CAPTCHA BYPASS LOGIC (with continuous checking)
 local function bypassCaptcha()
@@ -175,62 +214,16 @@ local function bypassCaptcha()
             print("CAPTCHA detected!")
 
             -- Attempt to bypass the CAPTCHA
-            local typeBox = captchaWindow:FindFirstChild("TypeBox")
-            local captchaText = captchaWindow:FindFirstChild("Captcha")
-
-            if typeBox and captchaText then
+            local typeFrame = captchaWindow:FindFirstChild("TypeFrame")
+            if typeFrame then
                 print("Bypassing CAPTCHA...")
-                typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
-                print("CAPTCHA bypassed successfully!")
-                return -- CAPTCHA bypass complete, exit function
-            else
-                print("ERROR: CAPTCHA elements not found! Retrying...")
-            end
-        end
-
-        -- Wait briefly before checking again
-        task.wait(1) -- Adjust the wait time if needed
-    end
-end
-
--- CAPTCHA "Yes" Button Resize Logic
-local function resizeYesButton()
-    local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-    local notificationWindows = gui and gui:FindFirstChild("NotificationWindows")
-    local popups = notificationWindows and notificationWindows:FindFirstChild("Popups")
-    local captchaWindow = popups and popups:FindFirstChild("CaptchaWindow")
-
-    if captchaWindow then
-        local buttonHolder = captchaWindow:FindFirstChild("ButtonHolder")
-        if buttonHolder then
-            local yesButton = buttonHolder:FindFirstChild("Yes")
-            if yesButton then
-                print("Resizing Yes button...")
-                yesButton.Size = UDim2.new(0, 5000, 0, 5000) -- Adjust size as requested
-            else
-                print("ERROR: 'Yes' button not found!")
+                typeFrame.TextButton.Visible = false
             end
         else
-            print("ERROR: ButtonHolder not found!")
+            wait(1) -- Check again every second
         end
-    else
-        print("ERROR: CAPTCHA window not found!")
     end
 end
 
--- TELEPORT TO BARRIER AND START CAPTCHA CHECKING IN PARALLEL
-spawn(function()
-    while true do
-        teleportPlayerToBarrier() -- Teleport to barrier every few seconds
-        task.wait(3.5) -- Delay between teleport attempts
-    end
-end)
-
--- CALL CAPTCHA AFTER WAITING FOR TELEPORTATION (with continuous captcha checking)
-spawn(function()
-    while true do
-        bypassCaptcha() -- Continuously check for and bypass CAPTCHA
-        resizeYesButton() -- Resize the "Yes" button if CAPTCHA is found
-        task.wait(0.02)  -- Adjust wait time if necessary to prevent excess resource usage
-    end
-end)
+-- START CAPTCHA BYPASS
+bypassCaptcha()
