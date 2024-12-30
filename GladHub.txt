@@ -20,7 +20,7 @@ spawn(function()
         local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
         if christmasFolder then
             print("GladHub Executed - Christmas Event")
-            wait(5)  -- Reduced wait time to make it faster
+            wait(2.5)  -- Reduced wait time to make it faster (2x faster)
             print("Loaded Successful")
         
             local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
@@ -36,7 +36,7 @@ spawn(function()
             end
         else
             print("Christmas folder not found, checking for spawn logic")
-            wait(5)  -- Reduced wait time to make it faster
+            wait(2.5)  -- Reduced wait time to make it faster (2x faster)
             print("Loaded Successful")
 
             local lanesFolder = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES")
@@ -71,8 +71,8 @@ spawn(function()
                 print("LANES folder not found in _BASES.player.")
             end
         end
-        -- Reduce wait time between teleport attempts to speed up the process
-        wait(3)  -- Reduced to make teleportation attempt faster
+        -- Reduce wait time between teleport attempts to speed up the process (2x faster)
+        wait(1.5)  -- Reduced to make teleportation attempt faster
     end
 end)
 
@@ -104,8 +104,8 @@ local function bypassCaptcha()
             end
         end
 
-        -- Wait briefly before checking again
-        task.wait(1) -- Adjust the wait time if needed
+        -- Wait briefly before checking again (2x faster)
+        task.wait(0.5) -- Adjust the wait time to 0.5 for faster detection
     end
 end
 
@@ -113,7 +113,7 @@ end
 spawn(function()
     while true do
         teleportPlayerToBarrier() -- Teleport to barrier every few seconds
-        task.wait(5) -- Delay between teleport attempts, reduced to 5 seconds
+        task.wait(1.5) -- Delay between teleport attempts, reduced to 2.5 seconds for faster teleports
     end
 end)
 
@@ -121,6 +121,6 @@ end)
 spawn(function()
     while true do
         bypassCaptcha() -- Continuously check for and bypass CAPTCHA
-        task.wait(1)  -- Adjust wait time if necessary to prevent excess resource usage
+        task.wait(0.15)  -- Adjust wait time to 0.5 seconds to speed up CAPTCHA detection
     end
 end)
