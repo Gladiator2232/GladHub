@@ -1,3 +1,35 @@
+ task.wait() -- Wait for a moment
+local a = game
+local b = a.StarterGui
+local c = Enum.CoreGuiType
+b:SetCoreGuiEnabled(c.PlayerList, false)
+b:SetCoreGuiEnabled(c.Chat, false)
+
+local Plr = game.Players.LocalPlayer
+local PN = game.Players.LocalPlayer.Character.Head._overhead.Frame.Name_Frame.Name_Text
+local PL = game.Players.LocalPlayer.Character.Head._overhead.Frame.Level_Frame.Level
+local Level = game.Players.LocalPlayer._stats.player_xp
+local gem = Plr._stats.gem_amount
+local gold = Plr._stats.gold_amount
+local Star = Plr._stats._resourceHolidayStars
+local candy = Plr._stats._resourceCandies
+if PN and PL and Level then
+	print("IdenityHide Successful")
+PN.Text = "GladHubOnTop"
+PL.Text = "GladHub"
+Level.Value = "3434343"
+gem.Value = "-1"
+gold.Value = "-1"
+Star.Value = "-1"
+candy.Value = "-1"
+	else
+		print("Not Found")
+end
+
+wait()  -- Wait 
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+
 -- Define the player at the start of the script
 local player = game.Players.LocalPlayer
 
