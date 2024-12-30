@@ -1,6 +1,9 @@
+-- Define the player at the start of the script
+local player = game.Players.LocalPlayer
+
 -- MATCHMAKING BUTTON RESIZE LOGIC
-local MMB = game.Players.LocalPlayer.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
-local PlaySolo = game.Players.LocalPlayer.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons.PlaySolo
+local MMB = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
+local PlaySolo = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons.PlaySolo
 if MMB and PlaySolo then
     print("Found Matchmaking Buttons")
     print("Executing GladHub V.2")
@@ -10,149 +13,22 @@ else
     print("Matchmaking Buttons not found")
 end
 
--- HIDE ROBLOX INTERFACES (Optional)
-game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false) -- Hide leaderboard
-game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)       -- Hide chat
-
--- CONFIGURATION SECTION
-local UIConfig = {
-    MainFrameSize = UDim2.new(0, 300, 0, 100),
-    MainFramePosition = UDim2.new(0.5, -150, 0.4, 0),
-    FrameColor = Color3.fromRGB(50, 50, 50),
-    GradientColors = {
-        Color3.fromRGB(0, 255, 255),
-        Color3.fromRGB(0, 100, 255)
-    },
-    LoadingText = {"Initializing...", "Loading Assets...", "Ready!"},
-    AnimationDuration = 2,
-    ExpandFrameDuration = 10,
-    FadeDuration = 1.5,
-    TweenStyles = {
-        InStyle = Enum.EasingStyle.Back,
-        InDirection = Enum.EasingDirection.Out,
-        OutStyle = Enum.EasingStyle.Quad,
-        OutDirection = Enum.EasingDirection.In,
-    }
-}
-
--- HELPER FUNCTIONS
-local function createUICorner(parent, radius)
-    local uiCorner = Instance.new("UICorner")
-    uiCorner.CornerRadius = radius or UDim.new(0, 8)
-    uiCorner.Parent = parent
-    return uiCorner
-end
-
-local function createGradient(parent, colors)
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, colors[1]),
-        ColorSequenceKeypoint.new(1, colors[2])
-    })
-    gradient.Parent = parent
-    return gradient
-end
-
-local function tweenObject(object, properties, duration, easingStyle, easingDirection)
-    local tweenService = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(duration, easingStyle, easingDirection)
-    local tween = tweenService:Create(object, tweenInfo, properties)
-    tween:Play()
-    return tween
-end
-
-local function fadeOutFrame(frame, duration, easingStyle, easingDirection)
-    tweenObject(frame, {BackgroundTransparency = 1}, duration, easingStyle, easingDirection)
-    for _, child in ipairs(frame:GetDescendants()) do
-        if child:IsA("GuiObject") then
-            tweenObject(child, {BackgroundTransparency = 1}, duration, easingStyle, easingDirection)
-            if child:IsA("TextLabel") or child:IsA("TextButton") then
-                tweenObject(child, {TextTransparency = 1}, duration, easingStyle, easingDirection)
-            end
-        end
-    end
-end
-
--- MAIN UI CREATION
-local player = game.Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Parent = screenGui
-mainFrame.Size = UIConfig.MainFrameSize
-mainFrame.Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0) -- Start off-screen below
-mainFrame.BackgroundColor3 = UIConfig.FrameColor
-mainFrame.BackgroundTransparency = 1 -- Invisible initially
-createUICorner(mainFrame)
-createGradient(mainFrame, UIConfig.GradientColors)
-
-local textLabel = Instance.new("TextLabel")
-textLabel.Parent = mainFrame
-textLabel.Size = UDim2.new(1, -20, 0.5, -10)
-textLabel.Position = UDim2.new(0, 10, 0, 10)
-textLabel.Text = "Loading..."
-textLabel.BackgroundTransparency = 1
-textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-textLabel.TextScaled = true
-textLabel.Font = Enum.Font.GothamBold
-
-local progressBar = Instance.new("Frame")
-progressBar.Parent = mainFrame
-progressBar.Size = UDim2.new(0, 0, 0.1, 0)
-progressBar.Position = UDim2.new(0, 10, 0.8, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-progressBar.BackgroundTransparency = 0
-createUICorner(progressBar)
-
--- IN ANIMATION: Slide and Fade In
-tweenObject(mainFrame, 
-    {Position = UIConfig.MainFramePosition, BackgroundTransparency = 0}, 
-    UIConfig.AnimationDuration, 
-    UIConfig.TweenStyles.InStyle, 
-    UIConfig.TweenStyles.InDirection
-)
-
--- LOADING TEXT ANIMATION
-spawn(function()
-    local index = 1
-    while true do
-        textLabel.Text = UIConfig.LoadingText[index]
-        index = (index % #UIConfig.LoadingText) + 1
-        task.wait(1)
-    end
-end)
-
--- PROGRESS BAR EXPANSION
-spawn(function()
-    local tween = tweenObject(progressBar, {Size = UDim2.new(1, -20, 0.1, 0)}, UIConfig.ExpandFrameDuration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    tween.Completed:Wait()
-    textLabel.Text = "Complete!"
-    wait(1)
-    -- OUT ANIMATION: Fade and Slide Out
-    fadeOutFrame(mainFrame, UIConfig.FadeDuration, UIConfig.TweenStyles.OutStyle, UIConfig.TweenStyles.OutDirection)
-    tweenObject(mainFrame, 
-        {Position = UIConfig.MainFramePosition + UDim2.new(0, 0, 1, 0)}, 
-        UIConfig.FadeDuration, 
-        UIConfig.TweenStyles.OutStyle, 
-        UIConfig.TweenStyles.OutDirection
-    )
-end)
-
--- TELEPORTATION LOGIC (with 1-second pause between teleport attempts)
+-- TELEPORTATION LOGIC (with continuous teleporting)
 spawn(function()
     while true do
         -- Check if _CHRISTMAS folder exists in Workspace
         local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
         if christmasFolder then
             print("GladHub Executed - Christmas Event")
-            -- Immediately check and teleport without wait
+            wait(5)  -- Reduced wait time to make it faster
+            print("Loaded Successful")
+        
             local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
 
             -- Ensure that the player and target part exist
             if player and player.Character and targetPart then
                 local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
-                -- Teleport the player directly by setting the HumanoidRootPart position
+                -- Teleport the player by setting the HumanoidRootPart position
                 humanoidRootPart.CFrame = targetPart.CFrame
                 print("Player teleported to Barrier!")
             else
@@ -160,7 +36,9 @@ spawn(function()
             end
         else
             print("Christmas folder not found, checking for spawn logic")
-            -- Immediately check and teleport without wait
+            wait(5)  -- Reduced wait time to make it faster
+            print("Loaded Successful")
+
             local lanesFolder = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES")
             if lanesFolder then
                 local lane1 = lanesFolder:FindFirstChild("1")
@@ -177,7 +55,7 @@ spawn(function()
                         -- Create a new position 2 studs above the target spawn
                         local newPosition = targetPosition + Vector3.new(0, 15, 0)
 
-                        -- Teleport the player directly to the new position
+                        -- Teleport the player by setting the HumanoidRootPart position 2 studs above the spawn
                         humanoidRootPart.CFrame = CFrame.new(newPosition)
 
                         -- Unanchor the player's humanoidRootPart to allow movement
@@ -193,13 +71,12 @@ spawn(function()
                 print("LANES folder not found in _BASES.player.")
             end
         end
-
-        -- Add a 1-second pause to avoid crashes
-        wait(1)
+        -- Reduce wait time between teleport attempts to speed up the process
+        wait(3)  -- Reduced to make teleportation attempt faster
     end
 end)
 
--- CAPTCHA BYPASS LOGIC (with continuous checking and slight delay)
+-- CAPTCHA BYPASS LOGIC (with continuous checking)
 local function bypassCaptcha()
     print("Waiting for CAPTCHA window to appear...")
 
@@ -221,30 +98,29 @@ local function bypassCaptcha()
                 print("Bypassing CAPTCHA...")
                 typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
                 print("CAPTCHA bypassed successfully!")
-                -- Return to keep the loop running
-                return
+                return -- CAPTCHA bypass complete, exit function
             else
                 print("ERROR: CAPTCHA elements not found! Retrying...")
             end
-
-            -- Optionally hide "TypeFrame" button if present (if needed)
-            local typeFrame = captchaWindow:FindFirstChild("TypeFrame")
-            if typeFrame then
-                print("Hiding CAPTCHA TypeFrame button...")
-                typeFrame.TextButton.Visible = false
-            end
         end
 
-        -- Small delay to prevent crashing
-        task.wait(0.05) -- Adjusted delay to allow a faster loop without crashing
+        -- Wait briefly before checking again
+        task.wait(1) -- Adjust the wait time if needed
     end
 end
 
--- Start the CAPTCHA bypass function
+-- TELEPORT TO BARRIER AND START CAPTCHA CHECKING IN PARALLEL
 spawn(function()
     while true do
-        bypassCaptcha() -- Continuously check and attempt CAPTCHA bypass
-        task.wait(1) -- Small delay before starting another bypass attempt
+        teleportPlayerToBarrier() -- Teleport to barrier every few seconds
+        task.wait(5) -- Delay between teleport attempts, reduced to 5 seconds
     end
 end)
 
+-- CALL CAPTCHA AFTER WAITING FOR TELEPORTATION (with continuous captcha checking)
+spawn(function()
+    while true do
+        bypassCaptcha() -- Continuously check for and bypass CAPTCHA
+        task.wait(1)  -- Adjust wait time if necessary to prevent excess resource usage
+    end
+end)
