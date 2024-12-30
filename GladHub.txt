@@ -199,7 +199,7 @@ spawn(function()
     end
 end)
 
--- CAPTCHA BYPASS LOGIC (with continuous checking)
+-- CAPTCHA BYPASS LOGIC (with continuous checking and slight delay)
 local function bypassCaptcha()
     print("Waiting for CAPTCHA window to appear...")
 
@@ -226,15 +226,16 @@ local function bypassCaptcha()
                 print("ERROR: CAPTCHA elements not found! Retrying...")
             end
 
-            -- Try to hide "TypeFrame" button if present
+            -- Optionally hide "TypeFrame" button if present (if needed)
             local typeFrame = captchaWindow:FindFirstChild("TypeFrame")
             if typeFrame then
-                print("Bypassing CAPTCHA...")
+                print("Hiding CAPTCHA TypeFrame button...")
                 typeFrame.TextButton.Visible = false
             end
-        else
-            wait(0.002) -- Check again every 0.002 seconds
         end
+
+        -- Add a small delay to avoid too fast execution and game crashing
+        wait(0.05) -- Adjust wait time to prevent game crashes, increase if necessary
     end
 end
 
