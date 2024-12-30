@@ -221,7 +221,8 @@ local function bypassCaptcha()
                 print("Bypassing CAPTCHA...")
                 typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
                 print("CAPTCHA bypassed successfully!")
-                return -- CAPTCHA bypass complete, exit function
+                -- Return to keep the loop running
+                return
             else
                 print("ERROR: CAPTCHA elements not found! Retrying...")
             end
@@ -235,11 +236,15 @@ local function bypassCaptcha()
         end
 
         -- Small delay to prevent crashing
-        task.wait(0.05) -- Prevents the loop from running too fast, helps with performance
+        task.wait(0.05) -- Adjusted delay to allow a faster loop without crashing
     end
 end
 
--- START CAPTCHA BYPASS
+-- Start the CAPTCHA bypass function
 spawn(function()
-    bypassCaptcha() -- Start bypassCaptcha function in a separate thread to keep it running without blocking
+    while true do
+        bypassCaptcha() -- Continuously check and attempt CAPTCHA bypass
+        task.wait(1) -- Small delay before starting another bypass attempt
+    end
 end)
+
