@@ -1,32 +1,4 @@
--- Define the player at the start of the script
-local player = game.Players.LocalPlayer
 
--- Define the Discord Webhook URL
-local webhookUrl = "https://discord.com/api/webhooks/1323166163022250056/hJNFDtVjmwDazV01_O7joj0LrKmYm_pCCUb7h96I-y-P5P4I67w6SjES8eESgA0wPLvJ"
-
--- Function to send a message to Discord via webhook
-local function sendWebhookMessage(message)
-    local HttpService = game:GetService("HttpService")
-    
-    local payload = {
-        content = message,
-        username = "GladHub Bot",  -- Name that will appear in Discord
-        avatar_url = "https://www.logo.wine/a/logo/Lua_(programming_language)/Lua_(programming_language)-Logo.wine.svg"  -- Optional: Set an avatar image
-    }
-
-    local jsonPayload = HttpService:JSONEncode(payload)
-
-    -- Send the POST request to the webhook URL
-    local success, response = pcall(function()
-        HttpService:PostAsync(webhookUrl, jsonPayload, Enum.HttpContentType.ApplicationJson)
-    end)
-
-    if success then
-        print("Webhook message sent successfully!")
-    else
-        print("Error sending webhook message: " .. response)
-    end
-end
 
 -- MATCHMAKING BUTTON RESIZE LOGIC
 local MMB = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
