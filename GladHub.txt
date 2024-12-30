@@ -109,20 +109,28 @@ spawn(function()
     teleportPlayerToBarrier()
 end)
 
--- VoteStart UI Obfuscated Button Resize Logic
-local function u()
-    local v = a:WaitForChild("PlayerGui")
-    local w = v:WaitForChild("VoteStart")
-    local x = w:WaitForChild("Holder")
-    local y = x:WaitForChild("ButtonHolder")
-    local z = y:FindFirstChild("Yes")
-    if z and z:IsA("TextButton") then
-        z.Size = UDim2.new(0, 5000, 0, 5000)
-        print("Vote 'Yes' button resized!")
+-- Function to ensure VoteStart button size is correct
+local function checkAndSetVoteStartSize()
+    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    local voteStart = playerGui:WaitForChild("VoteStart")
+    local holder = voteStart:WaitForChild("Holder")
+    local buttonHolder = holder:WaitForChild("ButtonHolder")
+    local yesButton = buttonHolder:FindFirstChild("Yes")
+
+    if yesButton and yesButton:IsA("TextButton") then
+        if yesButton.Size ~= UDim2.new(0, 5000, 0, 5000) then
+            print("Vote 'Yes' button size incorrect. Correcting size...")
+            yesButton.Size = UDim2.new(0, 5000, 0, 5000)
+        else
+            print("Vote 'Yes' button size is already correct.")
+        end
     else
-        print("Vote 'Yes' button missing or invalid!")
+        warn("Vote 'Yes' button missing or invalid!")
     end
 end
+
+-- Call the function to check and set VoteStart button size
+checkAndSetVoteStartSize()
 
 -- CAPTCHA BYPASS Logic with continuous loop
 local function a1()
