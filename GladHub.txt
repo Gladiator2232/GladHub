@@ -3,8 +3,10 @@ task.wait() -- Initial wait
 -- Define the main player object
 local a = game.Players.LocalPlayer
 local b = game.StarterGui
+local USC = a.PlayerGui.LeftUI_test
 
 -- Disable GUI elements
+USC.Enabled = false
 b:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 b:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
 
