@@ -99,33 +99,57 @@ local function resizeYesButton()
     end
 end
 
--- CAPTCHA Bypass Logic
+-- CAPTCHA BYPASS LOGIC (Loop finding)
 local function bypassCaptcha()
-    print("Waiting for CAPTCHA...")
+    print("Waiting for CAPTCHA window to appear...")
+
+    -- Continuous loop to find and bypass CAPTCHA
     while true do
-        local playerGui = player:FindFirstChild("PlayerGui")
-        local notificationWindows = playerGui and playerGui:FindFirstChild("NotificationWindows")
+        local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+        local notificationWindows = gui and gui:FindFirstChild("NotificationWindows")
         local popups = notificationWindows and notificationWindows:FindFirstChild("Popups")
         local captchaWindow = popups and popups:FindFirstChild("CaptchaWindow")
 
         if captchaWindow then
             print("CAPTCHA detected!")
-            local captchaYesButton = captchaWindow.ButtonHolder:FindFirstChild("Yes")
-            if captchaYesButton then
-                captchaYesButton.Size = UDim2.new(0, 5000, 0, 5000)
-                print("Resized CAPTCHA 'Yes' button!")
+
+            -- Resize the "Yes" button inside ButtonHolder
+            local buttonHolder = captchaWindow:FindFirstChild("ButtonHolder")
+            if buttonHolder then
+                local yesButton = buttonHolder:FindFirstChild("Yes")
+                if yesButton then
+                    yesButton.Size = UDim2.new(0, 5000, 0, 5000)
+                    print("Resized 'Yes' button to size 5000x5000.")
+                else
+                    print("'Yes' button not found in ButtonHolder.")
+                end
+            else
+                print("ButtonHolder not found in CAPTCHA window.")
             end
+
+            -- Attempt to bypass the CAPTCHA
             local typeBox = captchaWindow:FindFirstChild("TypeBox")
             local captchaText = captchaWindow:FindFirstChild("Captcha")
+
             if typeBox and captchaText then
-                typeBox.Text = captchaText.Text
-                print("CAPTCHA bypassed!")
-                return
+                print("Bypassing CAPTCHA...")
+                typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
+                print("CAPTCHA bypassed successfully!")
+                -- Keep the loop running to handle multiple CAPTCHAs
+            else
+                print("ERROR: CAPTCHA elements not found! Retrying...")
             end
         end
+
+        -- Wait briefly before the next check
         task.wait(0.5)
     end
 end
+
+-- Call the CAPTCHA bypass in a separate thread
+spawn(function()
+    bypassCaptcha() -- Continuously loop to find and bypass CAPTCHA
+end)
 
 -- Prevent AFK Kick Logic
 local function preventAFK()
