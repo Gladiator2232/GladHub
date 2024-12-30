@@ -30,10 +30,10 @@ spawn(function()
                 local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
                 
                 -- Teleport the player by setting the HumanoidRootPart position 7 studs above the target part
-                humanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 7, 0)
+                humanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 1, 0)
                 
                 -- Anchor the HumanoidRootPart after teleporting
-                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
                 
                 print("Player teleported to Barrier and anchored 7 studs above!")
             else
