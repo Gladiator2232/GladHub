@@ -1,3 +1,13 @@
+local MMB = game.Players.LocalPlayer.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
+if MMB then
+    print("Found")
+    print("Executing GladHub V.2")
+    -- Set the size using UDim2.new
+    MMB.Size = UDim2.new(0, 5000, 0, 5000)
+else
+    print("Not Found")
+end
+
 -- Hide the leaderboard
 game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 
