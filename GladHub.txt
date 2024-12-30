@@ -194,8 +194,8 @@ local nextButton = finished:FindFirstChild("Next")
 -- Check if the button exists
 if nextButton and nextButton:IsA("TextButton") then
     -- Change the button's size to 0,5000,0,5000
-    nextButton.Size = UDim2.new(0, 5000, 0, 5000)
-    print("Changed size of 'Next' button to 5000x5000 successfully!")
+    nextButton.Size = UDim2.new(0, 7000, 0, 7000)
+    print("Changed size of 'Next' button to 7000x7000 successfully!")
 else
     warn("Button 'Next' not found or is not a TextButton.")
 end
