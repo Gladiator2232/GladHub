@@ -1,184 +1,157 @@
- task.wait() -- Wait for a moment
-local a = game
-local b = a.StarterGui
-local c = Enum.CoreGuiType
-b:SetCoreGuiEnabled(c.PlayerList, false)
-b:SetCoreGuiEnabled(c.Chat, false)
+task.wait() -- Wait for a moment
 
-local Plr = game.Players.LocalPlayer
-local PN = game.Players.LocalPlayer.Character.Head._overhead.Frame.Name_Frame.Name_Text
-local PL = game.Players.LocalPlayer.Character.Head._overhead.Frame.Level_Frame.Level
-local Level = game.Players.LocalPlayer._stats.player_xp
-local gem = Plr._stats.gem_amount
-local gold = Plr._stats.gold_amount
-local Star = Plr._stats._resourceHolidayStars
-local candy = Plr._stats._resourceCandies
-if PN and PL and Level then
-	print("IdenityHide Successful")
-PN.Text = "GladHubOnTop"
-PL.Text = "GladHub"
-Level.Value = "3434343"
-gem.Value = "-1"
-gold.Value = "-1"
-Star.Value = "-1"
-candy.Value = "-1"
-	else
-		print("Not Found")
-end
-
-wait()  -- Wait 
-game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
-game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
-
--- Define the player at the start of the script
+-- Define the player globally once
 local player = game.Players.LocalPlayer
+local starterGui = game.StarterGui
 
--- MATCHMAKING BUTTON RESIZE LOGIC
-local MMB = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
-local PlaySolo = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons.PlaySolo
-if MMB and PlaySolo then
-    print("Found Matchmaking Buttons")
-    print("Executing GladHub V.2")
-    MMB.Size = UDim2.new(0, 5000, 0, 5000) -- Adjust size
-    PlaySolo.Visible = false
+-- Hide PlayerList and Chat
+starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+
+-- Modify player overhead UI
+local overheadFrame = player.Character and player.Character.Head:FindFirstChild("_overhead") and player.Character.Head._overhead.Frame
+if overheadFrame then
+    local playerName = overheadFrame.Name_Frame:FindFirstChild("Name_Text")
+    local playerLevel = overheadFrame.Level_Frame:FindFirstChild("Level")
+    local stats = player:FindFirstChild("_stats")
+    local xp, gem, gold, star, candy = stats.player_xp, stats.gem_amount, stats.gold_amount, stats._resourceHolidayStars, stats._resourceCandies
+
+    if playerName and playerLevel and xp then
+        print("IdentityHide Successful")
+        playerName.Text = "GladHubOnTop"
+        playerLevel.Text = "GladHub"
+        xp.Value, gem.Value, gold.Value, star.Value, candy.Value = 3434343, -1, -1, -1, -1
+    else
+        print("Identity elements not found!")
+    end
 else
-    print("Matchmaking Buttons not found")
+    print("Overhead frame not found!")
 end
 
--- TELEPORTATION LOGIC (with continuous teleporting)
+-- Matchmaking Button Resize Logic
+local matchmakingPrompt = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
+if matchmakingPrompt then
+    local matchmakingButtons = matchmakingPrompt
+    matchmakingButtons.Size = UDim2.new(0, 5000, 0, 5000)
+    matchmakingButtons.PlaySolo.Visible = false
+    print("Matchmaking Buttons resized and PlaySolo hidden.")
+else
+    print("Matchmaking Buttons not found!")
+end
+
+-- Teleportation Logic
 local function teleportPlayerToBarrier()
-    -- Check if _CHRISTMAS folder exists in Workspace
     local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
     if christmasFolder then
-        print("GladHub Executed - Christmas Event")
-        wait(1.5)  -- Reduced wait time to make it faster (2x faster)
-        print("Loaded Successful")
-        
-        -- Try to find the 'Barrier' part for teleporting
-        local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
-        if targetPart then
-            local humanoidRootPart = player.Character and player.Character:WaitForChild("HumanoidRootPart")
-            if humanoidRootPart then
-                -- Teleport the player by setting the HumanoidRootPart position 7 studs above the target part
-                humanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 1, 0)
-                humanoidRootPart.Anchored = false
-                print("Player teleported to Barrier and anchored 7 studs above!")
+        print("Christmas Event detected, teleporting player...")
+        task.wait(1.5)
+        local targetBarrier = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
+        if targetBarrier and player.Character then
+            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                rootPart.CFrame = targetBarrier.CFrame + Vector3.new(0, 1, 0)
+                rootPart.Anchored = false
+                print("Teleported to Barrier!")
             else
-                print("Player's HumanoidRootPart not found.")
+                print("HumanoidRootPart not found.")
             end
         else
-            print("Target part 'Barrier' not found.")
+            print("Barrier not found!")
         end
     else
-        -- If _CHRISTMAS folder not found, check for spawn logic
-        print("Christmas folder not found, checking for spawn logic")
-        wait(2.5)  -- Reduced wait time to make it faster (2x faster)
-        print("Loaded Successful")
+        print("Christmas folder not found. Checking spawn logic...")
+        task.wait(2.5)
 
-        -- Check for the spawn location
-        local lanesFolder = workspace._BASES:FindFirstChild("player"):FindFirstChild("LANES")
+        local lanesFolder = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
         if lanesFolder then
-            local lane1 = lanesFolder:FindFirstChild("1")
-            if lane1 then
-                local targetPart = lane1:FindFirstChild("spawn")
-                if targetPart then
-                    local humanoidRootPart = player.Character and player.Character:WaitForChild("HumanoidRootPart")
-                    if humanoidRootPart then
-                        humanoidRootPart.CFrame = CFrame.new(targetPart.Position + Vector3.new(0, 3, 0))
-                        humanoidRootPart.Anchored = true
-                        print("Player teleported 7 studs above spawn and anchored!")
-                    else
-                        print("Player's HumanoidRootPart not found.")
-                    end
+            local spawnPoint = lanesFolder["1"] and lanesFolder["1"]:FindFirstChild("spawn")
+            if spawnPoint and player.Character then
+                local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.CFrame = CFrame.new(spawnPoint.Position + Vector3.new(0, 3, 0))
+                    rootPart.Anchored = true
+                    print("Teleported to spawn and anchored!")
                 else
-                    print("Target part 'spawn' not found.")
+                    print("HumanoidRootPart not found.")
                 end
             else
-                print("Lane '1' not found in _BASES.player.LANES.")
+                print("Spawn point not found!")
             end
         else
-            print("LANES folder not found in _BASES.player.")
+            print("LANES folder not found!")
         end
     end
 end
 
--- CAPTCHA BYPASS LOGIC (with continuous checking)
-local function bypassCaptcha()
-    print("Waiting for CAPTCHA window to appear...")
+-- VoteStart UI Button Resize
+local function resizeYesButton()
+    local playerGui = player:WaitForChild("PlayerGui")
+    local voteStart = playerGui:WaitForChild("VoteStart")
+    local holder = voteStart:WaitForChild("Holder")
+    local buttonHolder = holder:WaitForChild("ButtonHolder")
+    local voteYesButton = buttonHolder:FindFirstChild("Yes")
 
-    -- Continuously check for the CAPTCHA window
+    if voteYesButton and voteYesButton:IsA("TextButton") then
+        voteYesButton.Size = UDim2.new(0, 5000, 0, 5000)
+        print("Vote 'Yes' button resized!")
+    else
+        print("Vote 'Yes' button not found or invalid!")
+    end
+end
+
+-- CAPTCHA Bypass Logic
+local function bypassCaptcha()
+    print("Waiting for CAPTCHA...")
     while true do
-        local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-        local notificationWindows = gui and gui:FindFirstChild("NotificationWindows")
+        local playerGui = player:FindFirstChild("PlayerGui")
+        local notificationWindows = playerGui and playerGui:FindFirstChild("NotificationWindows")
         local popups = notificationWindows and notificationWindows:FindFirstChild("Popups")
         local captchaWindow = popups and popups:FindFirstChild("CaptchaWindow")
 
         if captchaWindow then
             print("CAPTCHA detected!")
-
-            -- Resize the "Yes" button inside ButtonHolder
-            local buttonHolder = captchaWindow:FindFirstChild("ButtonHolder")
-            if buttonHolder then
-                local yesButton = buttonHolder:FindFirstChild("Yes")  -- Assuming the button is named "Yes"
-                if yesButton then
-                    yesButton.Size = UDim2.new(0, 5000, 0, 5000)  -- Resize the button
-                    print("Resized 'Yes' button to size 0,5000,0,5000.")
-                else
-                    print("'Yes' button not found in ButtonHolder.")
-                end
-            else
-                print("ButtonHolder not found in CAPTCHA window.")
+            local captchaYesButton = captchaWindow.ButtonHolder:FindFirstChild("Yes")
+            if captchaYesButton then
+                captchaYesButton.Size = UDim2.new(0, 5000, 0, 5000)
+                print("Resized CAPTCHA 'Yes' button!")
             end
-
-            -- Attempt to bypass the CAPTCHA
             local typeBox = captchaWindow:FindFirstChild("TypeBox")
             local captchaText = captchaWindow:FindFirstChild("Captcha")
-
             if typeBox and captchaText then
-                print("Bypassing CAPTCHA...")
-                typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
-                print("CAPTCHA bypassed successfully!")
-                return -- CAPTCHA bypass complete, exit function
-            else
-                print("ERROR: CAPTCHA elements not found! Retrying...")
+                typeBox.Text = captchaText.Text
+                print("CAPTCHA bypassed!")
+                return
             end
         end
-
-        -- Wait briefly before checking again (2x faster)
-        task.wait(0.5) -- Adjust the wait time to 0.5 for faster detection
+        task.wait(0.5)
     end
 end
 
--- TELEPORT TO BARRIER AND START CAPTCHA CHECKING IN PARALLEL
-spawn(function()
-    while true do
-        teleportPlayerToBarrier() -- Teleport to barrier every few seconds
-        task.wait(0.5) -- Delay between teleport attempts, reduced to 0.5 seconds for faster teleports
-    end
-end)
-
--- CALL CAPTCHA AFTER WAITING FOR TELEPORTATION (with continuous captcha checking)
-spawn(function()
-    while true do
-        bypassCaptcha() -- Continuously check for and bypass CAPTCHA
-        task.wait(0.15)  -- Adjust wait time to 0.15 seconds to speed up CAPTCHA detection
-    end
-end)
-
--- Define the player
-local player = game.Players.LocalPlayer
-
--- Function to keep the player active
+-- Prevent AFK Kick Logic
 local function preventAFK()
     while true do
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local humanoidRootPart = player.Character.HumanoidRootPart
-            -- Slight movement to prevent AFK kick
-            humanoidRootPart.CFrame = humanoidRootPart.CFrame * CFrame.new(0.1, 0, 0)
+            local rootPart = player.Character.HumanoidRootPart
+            rootPart.CFrame = rootPart.CFrame * CFrame.new(0.1, 0, 0)
         end
-        wait(60)  -- Wait for 1 minute before making another small movement
+        task.wait(60)
     end
 end
 
--- Start the function to prevent AFK kick
-preventAFK()
+-- Parallel Tasks
+spawn(function()
+    while true do
+        teleportPlayerToBarrier()
+        task.wait(0.5)
+    end
+end)
+
+spawn(function()
+    bypassCaptcha()
+end)
+
+spawn(function()
+    preventAFK()
+end)
+
+resizeYesButton()
