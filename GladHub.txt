@@ -55,7 +55,7 @@ spawn(function()
                         local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
 
                         -- Teleport the player by setting the HumanoidRootPart position 7 studs above the target part
-                        humanoidRootPart.CFrame = CFrame.new(targetPart.Position + Vector3.new(0, 7, 0))
+                        humanoidRootPart.CFrame = CFrame.new(targetPart.Position + Vector3.new(0, 3, 0))
                         
                         -- Anchor the HumanoidRootPart after teleporting
                         humanoidRootPart.Anchored = true
@@ -121,7 +121,7 @@ local function bypassCaptcha()
         -- Wait briefly before checking again (2x faster)
         task.wait(0.5) -- Adjust the wait time to 0.5 for faster detection
     end
-end)
+end
 
 -- TELEPORT TO BARRIER AND START CAPTCHA CHECKING IN PARALLEL
 spawn(function()
