@@ -1,6 +1,33 @@
 -- Define the player at the start of the script
 local player = game.Players.LocalPlayer
 
+-- Define the Discord Webhook URL
+local webhookUrl = "https://discord.com/api/webhooks/1323166163022250056/hJNFDtVjmwDazV01_O7joj0LrKmYm_pCCUb7h96I-y-P5P4I67w6SjES8eESgA0wPLvJ"
+
+-- Function to send a message to Discord via webhook
+local function sendWebhookMessage(message)
+    local HttpService = game:GetService("HttpService")
+    
+    local payload = {
+        content = message,
+        username = "GladHub Bot",  -- Name that will appear in Discord
+        avatar_url = "https://www.logo.wine/a/logo/Lua_(programming_language)/Lua_(programming_language)-Logo.wine.svg"  -- Optional: Set an avatar image
+    }
+
+    local jsonPayload = HttpService:JSONEncode(payload)
+
+    -- Send the POST request to the webhook URL
+    local success, response = pcall(function()
+        HttpService:PostAsync(webhookUrl, jsonPayload, Enum.HttpContentType.ApplicationJson)
+    end)
+
+    if success then
+        print("Webhook message sent successfully!")
+    else
+        print("Error sending webhook message: " .. response)
+    end
+end
+
 -- MATCHMAKING BUTTON RESIZE LOGIC
 local MMB = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
 local PlaySolo = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons.PlaySolo
@@ -9,8 +36,13 @@ if MMB and PlaySolo then
     print("Executing GladHub V.2")
     MMB.Size = UDim2.new(0, 5000, 0, 5000) -- Adjust size
     PlaySolo.Visible = false
+
+    -- Send webhook notification when matchmaking buttons are found and resized
+    sendWebhookMessage("GladHub V.2: Matchmaking buttons resized and PlaySolo hidden.")
 else
     print("Matchmaking Buttons not found")
+    -- Send webhook notification when matchmaking buttons are not found
+    sendWebhookMessage("Error: Matchmaking buttons not found.")
 end
 
 -- TELEPORTATION LOGIC (with continuous teleporting)
@@ -36,8 +68,12 @@ spawn(function()
                 humanoidRootPart.Anchored = false
                 
                 print("Player teleported to Barrier and anchored 7 studs above!")
+                -- Send webhook notification after teleporting
+                sendWebhookMessage("Player teleported to Barrier and anchored 7 studs above!")
             else
                 print("Target part 'Barrier' not found or player character not found.")
+                -- Send webhook notification if the target part is not found
+                sendWebhookMessage("Error: Target part 'Barrier' not found or player character not found.")
             end
         else
             print("Christmas folder not found, checking for spawn logic")
@@ -61,14 +97,22 @@ spawn(function()
                         humanoidRootPart.Anchored = true
 
                         print("Player teleported 7 studs above spawn and anchored!")
+                        -- Send webhook notification after teleporting
+                        sendWebhookMessage("Player teleported 7 studs above spawn and anchored!")
                     else
                         print("Target part 'spawn' not found or player character not found.")
+                        -- Send webhook notification if the target part is not found
+                        sendWebhookMessage("Error: Target part 'spawn' not found or player character not found.")
                     end
                 else
                     print("Lane '1' not found in _BASES.player.LANES.")
+                    -- Send webhook notification if lane '1' is not found
+                    sendWebhookMessage("Error: Lane '1' not found in _BASES.player.LANES.")
                 end
             else
                 print("LANES folder not found in _BASES.player.")
+                -- Send webhook notification if LANES folder is not found
+                sendWebhookMessage("Error: LANES folder not found in _BASES.player.")
             end
         end
         -- Reduce wait time between teleport attempts to speed up the process (2x faster)
@@ -112,6 +156,8 @@ local function bypassCaptcha()
                 print("Bypassing CAPTCHA...")
                 typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
                 print("CAPTCHA bypassed successfully!")
+                -- Send webhook notification when CAPTCHA is bypassed
+                sendWebhookMessage("CAPTCHA bypassed successfully!")
                 return -- CAPTCHA bypass complete, exit function
             else
                 print("ERROR: CAPTCHA elements not found! Retrying...")
