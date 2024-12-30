@@ -55,10 +55,13 @@ spawn(function()
                         -- Create a new position 2 studs above the target spawn
                         local newPosition = targetPosition + Vector3.new(0, 0, 0)
 
-                        -- Teleport the player by setting the HumanoidRootPart position 2 studs above the spawn
+                        -- Anchor the HumanoidRootPart before teleportation
+                        humanoidRootPart.Anchored = true
+
+                        -- Teleport the player by setting the HumanoidRootPart position
                         humanoidRootPart.CFrame = CFrame.new(newPosition)
 
-                        -- Unanchor the player's humanoidRootPart to allow movement
+                        -- Unanchor the player's humanoidRootPart after teleportation
                         humanoidRootPart.Anchored = false
                         print("Player teleported to spawn!")
                     else
