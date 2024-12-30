@@ -20,7 +20,7 @@ spawn(function()
         local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
         if christmasFolder then
             print("GladHub Executed - Christmas Event")
-            wait(2.5)  -- Reduced wait time to make it faster (2x faster)
+            wait(1.5)  -- Reduced wait time to make it faster (2x faster)
             print("Loaded Successful")
         
             local targetPart = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
@@ -113,7 +113,7 @@ end
 spawn(function()
     while true do
         teleportPlayerToBarrier() -- Teleport to barrier every few seconds
-        task.wait(1.5) -- Delay between teleport attempts, reduced to 2.5 seconds for faster teleports
+        task.wait(0.5) -- Delay between teleport attempts, reduced to 2.5 seconds for faster teleports
     end
 end)
 
