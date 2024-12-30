@@ -99,9 +99,9 @@ local function resizeYesButton()
     end
 end
 
--- CAPTCHA BYPASS LOGIC (Loop finding)
+-- CAPTCHA BYPASS LOGIC (Proper continuous looping)
 local function bypassCaptcha()
-    print("Waiting for CAPTCHA window to appear...")
+    print("Starting continuous CAPTCHA bypass...")
 
     -- Continuous loop to find and bypass CAPTCHA
     while true do
@@ -135,10 +135,12 @@ local function bypassCaptcha()
                 print("Bypassing CAPTCHA...")
                 typeBox.Text = captchaText.Text -- Copy the CAPTCHA text to the input
                 print("CAPTCHA bypassed successfully!")
-                -- Keep the loop running to handle multiple CAPTCHAs
             else
                 print("ERROR: CAPTCHA elements not found! Retrying...")
             end
+        else
+            -- CAPTCHA window not found, continue checking
+            print("No CAPTCHA detected, retrying...")
         end
 
         -- Wait briefly before the next check
@@ -150,6 +152,7 @@ end
 spawn(function()
     bypassCaptcha() -- Continuously loop to find and bypass CAPTCHA
 end)
+
 
 -- Prevent AFK Kick Logic
 local function preventAFK()
