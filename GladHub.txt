@@ -53,7 +53,7 @@ spawn(function()
                         local targetPosition = targetPart.Position
                         
                         -- Create a new position 2 studs above the target spawn
-                        local newPosition = targetPosition + Vector3.new(0, 11, 0)
+                        local newPosition = targetPosition + Vector3.new(0, 7, 0)
 
                         -- Teleport the player by setting the HumanoidRootPart position 2 studs above the spawn
                         humanoidRootPart.CFrame = CFrame.new(newPosition)
