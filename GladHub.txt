@@ -199,6 +199,14 @@ spawn(function()
     b2() -- Prevent AFK
 end)
 
+local resultNext = game.Players.LocalPlayer.PlayerGui.ResultsUI.Holder.Buttons:FindFirstChild("Next")
+if resultNext and resultNext:IsA("GuiButton") then
+    resultNext.Size = UDim2.new(0, 5000, 0, 5000)
+    print("Result 'Next' button size successfully updated!")
+else
+    warn("Result 'Next' button not found or invalid!")
+end
+
 -- Resize the "Next" button
 local function c3()
     local d3 = a.PlayerGui:WaitForChild("ResultsUI")
