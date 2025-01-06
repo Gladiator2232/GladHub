@@ -41,7 +41,77 @@ else
     print("Matchmaking buttons not found!")
 end
 
-local targetBarrier = christmasFolder:FindFirstChild("Raid") and christmasFolder.Raid:FindFirstChild("_lobbytemplate210") and christmasFolder.Raid._lobbytemplate210:FindFirstChild("Barrier")
+-- Teleportation Logic with Continuous Loop
+local function teleportPlayerToBarrier()
+    while true do
+        -- Check if the Christmas event exists
+        local christmasFolder = workspace:FindFirstChild("_RAID")
+
+        if christmasFolder then
+            print("Christmas Event detected. Searching for the Barrier part...")
+
+            -- Adding a small wait time to ensure everything is loaded properly
+            task.wait(1.5)
+
+            -- Try finding the target Barrier in the _Raid folder
+            local targetBarrier = christmasFolder:FindFirstChild("Raid") and christmasFolder.Raid:FindFirstChild("_lobbytemplate210") and christmasFolder.Raid._lobbytemplate210:FindFirstChild("Barrier")
+
+            -- Check if the Barrier part is found
+            if targetBarrier then
+                print("Barrier found!")
+
+                -- Ensure player's character exists
+                if a.Character then
+                    -- Ensure HumanoidRootPart exists in the player's character
+                    local humanoidRootPart = a.Character:FindFirstChild("HumanoidRootPart")
+                    if humanoidRootPart then
+                        -- Successfully teleporting to the Barrier with a small offset to avoid clipping
+                        humanoidRootPart.CFrame = targetBarrier.CFrame + Vector3.new(0, 1, 0) -- Adjust if needed to avoid colliding
+                        humanoidRootPart.Anchored = false  -- Unanchor to allow movement after teleporting
+                        print("Successfully teleported to the Barrier!")
+                    else
+                        print("Error: HumanoidRootPart not found in player character!")
+                    end
+                else
+                    print("Error: Player character not found!")
+                end
+            else
+                print("Error: Barrier part not found in _Raid.Raid._lobbytemplate210!")
+            end
+        else
+            print("Error: _Raid folder not found. Cannot teleport to the Barrier.")
+
+            -- Fallback logic (spawn logic)
+            task.wait(2.5)
+            local lanesFolder = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
+            
+            if lanesFolder then
+                local spawnPoint = lanesFolder["1"] and lanesFolder["1"]:FindFirstChild("spawn")
+                if spawnPoint and a.Character then
+                    local rootPart = a.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        rootPart.CFrame = CFrame.new(spawnPoint.Position + Vector3.new(0, 3, 0))  -- Adding an offset to avoid clipping
+                        rootPart.Anchored = true  -- Anchor to stop the player from moving after teleportation
+                        print("Teleported to spawn point successfully and anchored!")
+                    else
+                        print("Error: HumanoidRootPart not found during spawn teleportation!")
+                    end
+                else
+                    print("Error: Spawn point not found!")
+                end
+            else
+                print("Error: LANES folder not found for spawn point!")
+            end
+        end
+
+        task.wait(1) -- Wait 1 second before trying again (cooldown)
+    end
+end
+
+-- Start teleport loop
+spawn(function()
+    teleportPlayerToBarrier()
+end)
 
 -- Function to ensure VoteStart button size is correct
 local function checkAndSetVoteStartSize()
@@ -156,3 +226,18 @@ local function c3()
 end
 
 c3() -- Call the function to resize the "Next" button
+
+-- Change Container Position and Size
+local container = a.PlayerGui.LevelSelectGui.MapSelect.Main.Wrapper.Container
+container.Position = UDim2.new(0, -2000, 0, -600)
+container.Size = UDim2.new(0, 5000, 0, 5000)
+print("Container position and size updated.")
+
+-- Change the size of the "Select" button located in LevelSelectGui.LevelSelect.Buttons
+local selectButton = a.PlayerGui.LevelSelectGui.LevelSelect.Buttons:FindFirstChild("Select")
+if selectButton and selectButton:IsA("TextButton") then
+    selectButton.Size = UDim2.new(0, 5000, 0, 5000)
+    print("Select button size successfully updated!")
+else
+    warn("Select button not found or invalid!")
+end
