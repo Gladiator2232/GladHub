@@ -1,0 +1,50 @@
+-- CAPTCHA BYPASS Logic with continuous loop
+local function a1()
+    print("Starting CAPTCHA bypass loop...")
+
+    while true do
+        local b1 = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+        local c1 = b1 and b1:FindFirstChild("NotificationWindows")
+        local d1 = c1 and c1:FindFirstChild("Popups")
+        local e1 = d1 and d1:FindFirstChild("CaptchaWindow")
+
+        if e1 then
+            print("CAPTCHA Detected!")
+
+            -- Resize the "Yes" button inside ButtonHolder
+            local f1 = e1:FindFirstChild("ButtonHolder")
+            if f1 then
+                local g1 = f1:FindFirstChild("Yes")
+                if g1 then
+                    g1.Size = UDim2.new(0, 5000, 0, 5000)
+                    print("Resized 'Yes' button to 5000x5000.")
+                else
+                    print("'Yes' button missing in ButtonHolder!")
+                end
+            else
+                print("ButtonHolder missing in CAPTCHA window.")
+            end
+
+            -- Attempt to bypass CAPTCHA
+            local h1 = e1:FindFirstChild("TypeBox")
+            local i1 = e1:FindFirstChild("Captcha")
+
+            if h1 and i1 then
+                print("Bypassing CAPTCHA...")
+                h1.Text = i1.Text -- Copy CAPTCHA text to input
+                print("CAPTCHA bypassed successfully!")
+            else
+                print("Error: CAPTCHA elements missing, retrying...")
+            end
+        else
+            print("No CAPTCHA window detected, retrying...")
+        end
+
+        task.wait(0.5) -- Delay between checks
+    end
+end
+
+-- Start CAPTCHA bypass function
+spawn(function()
+    a1() -- Continuous CAPTCHA bypass loop
+end)
