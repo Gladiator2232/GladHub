@@ -34,8 +34,8 @@ end
 local l = a.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
 if l then
     local m = l
-    m.Size = UDim2.new(0, 5000, 0, 5000)
-    m.PlaySolo.Visible = false
+    m.Size = UDim2.new(0, 8000, 0, 8000)
+    m.Matchmaking.Visible = false
     print("Matchmaking buttons resized and PlaySolo hidden.")
 else
     print("Matchmaking buttons not found!")
