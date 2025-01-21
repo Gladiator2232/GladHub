@@ -41,7 +41,7 @@ local hardButton = levelSelectUI.LevelSelect.InfoFrame.Bottom.Difficulty.Items:F
 local normalButton = hardButton.Parent:FindFirstChild("Normal")
 local startButton = levelSelectUI.LevelSelect.Buttons:FindFirstChild("Start")
 if hardButton and normalButton and startButton then
-    startButton.Size = UDim2.new(0, 600, 0, 600)
+    startButton.Size = UDim2.new(0, 6000, 0, 6000)
     normalButton.Visible = false
     hardButton.Size = UDim2.new(0, 6000, 0, 6000)
     print("Matchmaking buttons resized and Normal hidden.")
