@@ -1,0 +1,139 @@
+-- Initial wait
+task.wait()
+
+-- Define the main player object
+local player = game.Players.LocalPlayer
+local starterGui = game.StarterGui
+local leftUITest = player.PlayerGui:WaitForChild("LeftUI_test")
+local messageGui = player.PlayerGui:WaitForChild("MessageGui")
+
+-- Disable GUI elements
+leftUITest.Enabled = false
+messageGui.Enabled = false
+starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+
+-- Modify player UI elements
+local overheadFrame = player.Character and player.Character:FindFirstChild("Head") and player.Character.Head:FindFirstChild("_overhead")
+if overheadFrame then
+    local nameText = overheadFrame.Frame:FindFirstChild("Name_Frame"):FindFirstChild("Name_Text")
+    local levelText = overheadFrame.Frame:FindFirstChild("Level_Frame"):FindFirstChild("Level")
+    local stats = player:FindFirstChild("_stats")
+    if stats and nameText and levelText then
+        print("Identity Modification Complete")
+        nameText.Text = "GladHubOnTop"
+        levelText.Text = "GladHub"
+        stats.player_xp.Value = 3434343
+        stats.gem_amount.Value = -1
+        stats.gold_amount.Value = -1
+        stats._resourceHolidayStars.Value = -1
+        stats._resourceCandies.Value = -1
+    else
+        warn("Missing required identity elements!")
+    end
+else
+    warn("Overhead Frame missing!")
+end
+
+-- Resize matchmaking buttons
+local levelSelectUI = player.PlayerGui:WaitForChild("InfiniteTowerUI")
+local hardButton = levelSelectUI.LevelSelect.InfoFrame.Bottom.Difficulty.Items:FindFirstChild("Hard")
+local normalButton = hardButton.Parent:FindFirstChild("Normal")
+local startButton = levelSelectUI.LevelSelect.Buttons:FindFirstChild("Start")
+if hardButton and normalButton and startButton then
+    startButton.Size = UDim2.new(0, 600, 0, 600)
+    normalButton.Visible = false
+    hardButton.Size = UDim2.new(0, 6000, 0, 6000)
+    print("Matchmaking buttons resized and Normal hidden.")
+else
+    warn("Matchmaking buttons not found!")
+end
+
+-- Teleportation Logic
+local function teleportPlayer()
+    while true do
+        local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
+        if christmasFolder then
+            local barrier = workspace._infinity_castle:FindFirstChild("_enter")
+            if barrier and player.Character then
+                local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.CFrame = barrier.CFrame + Vector3.new(0, 1, 0)
+                    print("Teleported to the Barrier.")
+                else
+                    warn("HumanoidRootPart missing!")
+                end
+            else
+                warn("Barrier not found!")
+            end
+        else
+            local lanes = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
+            if lanes then
+                local spawn = lanes:FindFirstChild("1") and lanes["1"]:FindFirstChild("spawn")
+                if spawn and player.Character then
+                    local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        rootPart.CFrame = CFrame.new(spawn.Position + Vector3.new(0, 3, 0))
+                        print("Teleported to spawn point.")
+                    else
+                        warn("HumanoidRootPart missing!")
+                    end
+                end
+            end
+        end
+        task.wait(1)
+    end
+end
+spawn(teleportPlayer)
+
+-- Auto Place and Upgrade
+local function autoPlaceUnits()
+    local lanes = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
+    if not lanes then return end
+    local lane = lanes:FindFirstChild("1")
+    if not lane then return end
+    local spawnPoint = lane:FindFirstChild("spawn")
+    if not spawnPoint then return end
+
+    local unitData = {
+        {"{13621330-5691-4f2f-9f8f-874af0f44c17}", "Monet"},
+        {"{24d0de9f-9593-4d37-907b-cde22816b121}", "Speedwagon"},
+        {"{2ea6f28a-a0f0-4752-b00e-a3d28eb432fd}", "Guts"}
+    }
+
+    for _, unit in ipairs(unitData) do
+        game:GetService("ReplicatedStorage").endpoints.client_to_server.spawn_unit:InvokeServer(unit[1], CFrame.new(spawnPoint.Position + Vector3.new(math.random(-10, 10), 0, math.random(-10, 10))))
+        print("Placed unit: " .. unit[2])
+        task.wait(0.1)
+    end
+end
+
+local function autoUpgradeUnits()
+    local units = workspace._UNITS:GetChildren()
+    for _, unit in pairs(units) do
+        if unit.Name:lower():find("monet") or unit.Name:lower():find("speedwagon") or unit.Name:lower():find("guts") then
+            game:GetService("ReplicatedStorage").endpoints.client_to_server.upgrade_unit_ingame:InvokeServer(unit)
+            print("Upgraded unit: " .. unit.Name)
+            task.wait(0.1)
+        end
+    end
+end
+
+spawn(function()
+    while true do
+        autoPlaceUnits()
+        autoUpgradeUnits()
+        task.wait(0.4)
+    end
+end)
+
+-- Anti-AFK
+spawn(function()
+    while true do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            rootPart.CFrame = rootPart.CFrame * CFrame.new(0.1, 0, 0)
+        end
+        task.wait(60)
+    end
+end)
