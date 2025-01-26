@@ -1,0 +1,434 @@
+-- Services
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+-- Player setup
+local player = Players.LocalPlayer
+
+-- Flags and variables
+local autoFarmOn = false
+local selectedHuman = nil
+local activeTween = nil
+local tweenSpeed = 10
+local humanoidRootPart = nil
+local tpTime = 5
+local yOffset = -5
+
+-- Ensure the character and HumanoidRootPart are available
+local function initializeCharacter()
+    if player.Character then
+        humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+    end
+    player.CharacterAdded:Connect(function(character)
+        humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        if autoFarmOn then
+            startAutoFarm()
+        end
+    end)
+end
+initializeCharacter()
+
+-- Function to get a Human's HumanoidRootPart inside a "CCGSpawns" part
+local function getRandomHumanSpawn()
+    local humanSpawns = workspace:FindFirstChild("NPCSpawns")
+    if not humanSpawns then
+        print("No NPCSpawns found in workspace.")
+        return nil
+    end
+
+    for _, spawn in ipairs(humanSpawns:GetChildren()) do
+        if spawn:IsA("BasePart") and spawn.Name == "GhoulSpawns" then
+            local humanModel = spawn:FindFirstChildOfClass("Model")
+            if humanModel then
+                local humanoidRootPart = humanModel:FindFirstChild("HumanoidRootPart")
+                local humanoid = humanModel:FindFirstChild("Humanoid")
+
+                if humanoidRootPart and humanoid and humanoid.Health > 0 then
+                    print("Found a valid human to farm.")
+                    return humanoidRootPart
+                end
+            end
+        end
+    end
+    print("No valid human found.")
+    return nil
+end
+
+-- Function to handle the auto farm logic
+local function startAutoFarm()
+    while autoFarmOn do
+        if not humanoidRootPart or not humanoidRootPart.Parent then
+            repeat
+                task.wait(1)
+                humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            until humanoidRootPart and humanoidRootPart.Parent
+        end
+
+        humanoidRootPart.Anchored = false
+
+        selectedHuman = getRandomHumanSpawn()
+        if not selectedHuman then
+            print("No human found. Retrying...")
+            task.wait(.02)
+            continue
+        end
+
+        local targetPosition = selectedHuman.Position + Vector3.new(0, yOffset, 0)
+        local distance = (humanoidRootPart.Position - targetPosition).Magnitude
+        local tweenTime = distance / tweenSpeed
+        local targetCFrame = CFrame.new(targetPosition)
+
+        local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        local goal = { CFrame = targetCFrame }
+        activeTween = TweenService:Create(humanoidRootPart, tweenInfo, goal)
+        activeTween:Play()
+        activeTween.Completed:Wait()
+
+        local startTime = os.clock()
+        while autoFarmOn and (os.clock() - startTime) < tpTime do
+            if selectedHuman and selectedHuman.Parent then
+                humanoidRootPart.CFrame = targetCFrame
+            end
+            task.wait(0.02)
+        end
+
+        selectedHuman = nil
+    end
+
+    if humanoidRootPart then
+        humanoidRootPart.Anchored = false
+    end
+end
+
+-- UI Setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GladHub"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.Size = UDim2.new(0, 320, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -190)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+mainFrame.BorderSizePixel = 0
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = mainFrame
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+titleLabel.BorderSizePixel = 0
+titleLabel.Text = "GladHub | Ro-Ghoul | Beta"
+titleLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 20
+
+local autoFarmToggle = Instance.new("TextButton")
+autoFarmToggle.Name = "AutoFarmToggle"
+autoFarmToggle.Parent = mainFrame
+autoFarmToggle.Size = UDim2.new(0, 280, 0, 50)
+autoFarmToggle.Position = UDim2.new(0.5, 0, 0.15, 0)
+autoFarmToggle.AnchorPoint = Vector2.new(0.5, 0)
+autoFarmToggle.Text = "Auto Farm: OFF"
+autoFarmToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoFarmToggle.Font = Enum.Font.Gotham
+autoFarmToggle.TextSize = 18
+autoFarmToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+autoFarmToggle.BorderSizePixel = 0
+
+local toggleUICorner = Instance.new("UICorner")
+toggleUICorner.CornerRadius = UDim.new(0, 10)
+toggleUICorner.Parent = autoFarmToggle
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Parent = mainFrame
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, 0, 0, 0)
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 18
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.BorderSizePixel = 0
+
+local closeUICorner = Instance.new("UICorner")
+closeUICorner.CornerRadius = UDim.new(0, 10)
+closeUICorner.Parent = closeButton
+
+-- Dropdown for Speed Selection
+local speedButton = Instance.new("TextButton")
+speedButton.Name = "SpeedButton"
+speedButton.Parent = mainFrame
+speedButton.Size = UDim2.new(0, 280, 0, 30)
+speedButton.Position = UDim2.new(0.5, 0, 0.3, 0)
+speedButton.AnchorPoint = Vector2.new(0.5, 0)
+speedButton.Text = "Select Speed"
+speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedButton.Font = Enum.Font.Gotham
+speedButton.TextSize = 14
+speedButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+speedButton.BorderSizePixel = 0
+
+local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Name = "DropdownFrame"
+dropdownFrame.Parent = mainFrame
+dropdownFrame.Size = UDim2.new(1, 0, 0, 0)
+dropdownFrame.Position = UDim2.new(0.5, 0, 0.35, 0)
+dropdownFrame.AnchorPoint = Vector2.new(0.5, 0)
+dropdownFrame.Visible = false
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+dropdownFrame.BorderSizePixel = 0
+dropdownFrame.ClipsDescendants = true
+
+local function createDropdownOption(text, speed)
+    local option = Instance.new("TextButton")
+    option.Size = UDim2.new(1, 0, 0, 30)
+    option.Text = text
+    option.TextColor3 = Color3.fromRGB(255, 255, 255)
+    option.Font = Enum.Font.Gotham
+    option.TextSize = 14
+    option.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    option.BorderSizePixel = 0
+
+    option.MouseButton1Click:Connect(function()
+        tweenSpeed = speed
+        speedButton.Text = "Speed: " .. text
+        dropdownFrame.Visible = false
+    end)
+
+    return option
+end
+
+-- Populate dropdown with speed options
+local speeds = {10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210}
+for i, speed in ipairs(speeds) do
+    local option = createDropdownOption(tostring(speed), speed)
+    option.Parent = dropdownFrame
+    option.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
+    dropdownFrame.Size = UDim2.new(1, 0, 0, (i * 30))
+end
+
+speedButton.MouseButton1Click:Connect(function()
+    dropdownFrame.Visible = not dropdownFrame.Visible
+end)
+
+-- Dropdown for TP Time Selection
+local tpTimeButton = Instance.new("TextButton")
+tpTimeButton.Name = "TPTimeButton"
+tpTimeButton.Parent = mainFrame
+tpTimeButton.Size = UDim2.new(0, 280, 0, 30)
+tpTimeButton.Position = UDim2.new(0.5, 0, 0.45, 0)
+tpTimeButton.AnchorPoint = Vector2.new(0.5, 0)
+tpTimeButton.Text = "Select TP Time"
+tpTimeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpTimeButton.Font = Enum.Font.Gotham
+tpTimeButton.TextSize = 14
+tpTimeButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+tpTimeButton.BorderSizePixel = 0
+
+local tpDropdownFrame = Instance.new("Frame")
+tpDropdownFrame.Name = "TPDropdownFrame"
+tpDropdownFrame.Parent = mainFrame
+tpDropdownFrame.Size = UDim2.new(1, 0, 0, 0)
+tpDropdownFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+tpDropdownFrame.AnchorPoint = Vector2.new(0.5, 0)
+tpDropdownFrame.Visible = false
+tpDropdownFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+tpDropdownFrame.BorderSizePixel = 0
+tpDropdownFrame.ClipsDescendants = true
+
+-- Dropdown for Y-axis Offset Selection
+local yOffsetButton = Instance.new("TextButton")
+yOffsetButton.Name = "YOffsetButton"
+yOffsetButton.Parent = mainFrame
+yOffsetButton.Size = UDim2.new(0, 280, 0, 30)
+yOffsetButton.Position = UDim2.new(0.5, 0, 0.6, 0)
+yOffsetButton.AnchorPoint = Vector2.new(0.5, 0)
+yOffsetButton.Text = "Select Y Offset"
+yOffsetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+yOffsetButton.Font = Enum.Font.Gotham
+yOffsetButton.TextSize = 14
+yOffsetButton.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+yOffsetButton.BorderSizePixel = 0
+
+local yOffsetDropdownFrame = Instance.new("Frame")
+yOffsetDropdownFrame.Name = "YOffsetDropdownFrame"
+yOffsetDropdownFrame.Parent = mainFrame
+yOffsetDropdownFrame.Size = UDim2.new(1, 0, 0, 0)
+yOffsetDropdownFrame.Position = UDim2.new(0.5, 0, 0.65, 0)
+yOffsetDropdownFrame.AnchorPoint = Vector2.new(0.5, 0)
+yOffsetDropdownFrame.Visible = false
+yOffsetDropdownFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+yOffsetDropdownFrame.BorderSizePixel = 0
+yOffsetDropdownFrame.ClipsDescendants = true
+
+local function createYOffsetDropdownOption(text, offset)
+    local option = Instance.new("TextButton")
+    option.Size = UDim2.new(1, 0, 0, 30)
+    option.Text = text
+    option.TextColor3 = Color3.fromRGB(255, 255, 255)
+    option.Font = Enum.Font.Gotham
+    option.TextSize = 14
+    option.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    option.BorderSizePixel = 0
+
+    option.MouseButton1Click:Connect(function()
+        yOffset = offset
+        yOffsetButton.Text = "Y Offset: " .. text
+        yOffsetDropdownFrame.Visible = false
+    end)
+
+    return option
+end
+
+
+
+-- Populate dropdown with Y-axis offset options
+local yOffsets = {-1, -3, -5, -7, -10}
+for i, offset in ipairs(yOffsets) do
+    local option = createYOffsetDropdownOption(tostring(offset), offset)
+    option.Parent = yOffsetDropdownFrame
+    option.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
+    yOffsetDropdownFrame.Size = UDim2.new(1, 0, 0, i * 30)
+end
+
+yOffsetButton.MouseButton1Click:Connect(function()
+    yOffsetDropdownFrame.Visible = not yOffsetDropdownFrame.Visible
+end)
+
+-- Text label to show current TP time
+local tpTimeLabel = Instance.new("TextLabel")
+tpTimeLabel.Name = "TPTimeLabel"
+tpTimeLabel.Parent = mainFrame
+tpTimeLabel.Size = UDim2.new(0, 280, 0, 30)
+tpTimeLabel.Position = UDim2.new(0.5, 0, 0.75, 0)
+tpTimeLabel.AnchorPoint = Vector2.new(0.5, 0)
+tpTimeLabel.Text = "Current TP Time: " .. tpTime .. " sec"
+tpTimeLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+tpTimeLabel.Font = Enum.Font.Gotham
+tpTimeLabel.TextSize = 14
+tpTimeLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+tpTimeLabel.BorderSizePixel = 0
+
+-- Function to update the TP time label
+local function updateTpTimeLabel()
+    tpTimeLabel.Text = "Current TP Time: " .. tpTime .. " sec"
+end
+
+
+
+local function createTPDropdownOption(text, time)
+    local option = Instance.new("TextButton")
+    option.Size = UDim2.new(1, 0, 0, 30)
+    option.Text = text
+    option.TextColor3 = Color3.fromRGB(255, 255, 255)
+    option.Font = Enum.Font.Gotham
+    option.TextSize = 14
+    option.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    option.BorderSizePixel = 0
+
+    option.MouseButton1Click:Connect(function()
+        tpTime = time
+        tpTimeButton.Text = "TP Time: " .. text .. " sec"
+        tpDropdownFrame.Visible = false
+        updateTpTimeLabel()
+    end)
+
+    return option
+end
+
+-- Populate dropdown with TP time options
+local tpTimes = {1, 5, 10, 15, 20}
+for i, time in ipairs(tpTimes) do
+    local option = createTPDropdownOption(tostring(time), time)
+    option.Parent = tpDropdownFrame
+    option.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
+    tpDropdownFrame.Size = UDim2.new(1, 0, 0, i * 30)
+end
+
+tpTimeButton.MouseButton1Click:Connect(function()
+    tpDropdownFrame.Visible = not tpDropdownFrame.Visible
+end)
+
+-- Minimize and Unminimize Logic
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Parent = mainFrame
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(0, 0, 0, 0)
+minimizeButton.AnchorPoint = Vector2.new(0, 0)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 18
+minimizeButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+minimizeButton.BorderSizePixel = 0
+
+local minimized = false
+
+minimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        mainFrame.Size = UDim2.new(0, 320, 0, 40)
+    else
+        mainFrame.Size = UDim2.new(0, 320, 0, 380)
+    end
+end)
+
+-- Auto Farm Toggle Logic
+-- Auto Farm Toggle Logic
+autoFarmToggle.MouseButton1Click:Connect(function()
+ autoFarmOn = not autoFarmOn
+    autoFarmToggle.Text = autoFarmOn and "Auto Farm: ON" or "Auto Farm: OFF"
+    autoFarmToggle.BackgroundColor3 = autoFarmOn and Color3.fromRGB(70, 130, 180) or Color3.fromRGB(50, 50, 70)
+    
+    if autoFarmOn then
+        startAutoFarm()
+    end
+end)
+
+-- Close Button Logic
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Draggable UI functionality
+local dragging, dragStart, startPos
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+               dragStart = input.Position
+        startPos = mainFrame.Position
+
+        -- Connect the input state changes for dragging
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
