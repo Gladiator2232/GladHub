@@ -1,0 +1,266 @@
+-- Initial wait
+task.wait()
+
+-- Define the main player object
+local player = game.Players.LocalPlayer
+local starterGui = game.StarterGui
+local leftUITest = player.PlayerGui:WaitForChild("LeftUI_test")
+local messageGui = player.PlayerGui:WaitForChild("MessageGui")
+
+-- Disable GUI elements
+leftUITest.Enabled = false
+messageGui.Enabled = false
+starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+starterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+
+-- Modify player UI elements
+local overheadFrame = player.Character and player.Character:FindFirstChild("Head") and player.Character.Head:FindFirstChild("_overhead")
+if overheadFrame then
+    local nameText = overheadFrame.Frame:FindFirstChild("Name_Frame"):FindFirstChild("Name_Text")
+    local levelText = overheadFrame.Frame:FindFirstChild("Level_Frame"):FindFirstChild("Level")
+    local stats = player:FindFirstChild("_stats")
+    if stats and nameText and levelText then
+        print("Identity Modification Complete")
+        nameText.Text = "GladHubOnTop"
+        levelText.Text = "GladHub"
+        stats.player_xp.Value = 3434343
+        stats.gem_amount.Value = -1
+        stats.gold_amount.Value = -1
+        stats._resourceHolidayStars.Value = -1
+        stats._resourceCandies.Value = -1
+    else
+        warn("Missing required identity elements!")
+    end
+else
+    warn("Overhead Frame missing!")
+end
+
+-- Matchmaking Button Resize Obfuscated
+local l = player.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
+if l then
+    local m = l
+    m.Size = UDim2.new(0, 5000, 0, 5000)
+    m.PlaySolo.Visible = false
+    print("Matchmaking buttons resized and PlaySolo hidden.")
+else
+    print("Matchmaking buttons not found!")
+end
+-- Teleportation Logic with Continuous Loop
+local function teleportPlayer()
+    while true do
+        local christmasFolder = workspace:FindFirstChild("_CHRISTMAS")
+
+        if christmasFolder then
+            print("Christmas Event detected. Searching for the Barrier part...")
+
+            -- Adding a small wait time to ensure everything is loaded properly
+            task.wait(1.5)
+
+            -- Try finding the target Barrier
+            local targetBarrier = workspace._EVENT_CHALLENGES.Lobbies._lobbytemplate_event3:FindFirstChild("Barrier")
+
+            -- Check if the Barrier part is found
+            if targetBarrier then
+                if player.Character then
+                    -- Ensure HumanoidRootPart exists in the player's character
+                    local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                    if humanoidRootPart then
+                        -- Successfully teleporting to the Barrier with a small offset to avoid clipping
+                        humanoidRootPart.CFrame = targetBarrier.CFrame + Vector3.new(0, 1, 0)
+                        humanoidRootPart.Anchored = false  -- Unanchor to allow movement after teleporting
+                        print("Successfully teleported to the Barrier!")
+                    else
+                        print("Error: HumanoidRootPart not found in player character!")
+                    end
+                else
+                    print("Error: Player character not found!")
+                end
+            else
+                print("Error: Barrier part not found in _EVENT_CHALLENGES.Lobbies._lobbytemplate_event3!")
+            end
+        else
+            print("Error: _CHRISTMAS folder not found. Cannot teleport to the Barrier.")
+
+            -- Fallback logic (spawn logic)
+            task.wait(2.5)
+            local lanesFolder = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
+            
+            if lanesFolder then
+                local spawnPoint = lanesFolder["1"] and lanesFolder["1"]:FindFirstChild("spawn")
+                if spawnPoint and a.Character then
+                    local rootPart = a.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        rootPart.CFrame = CFrame.new(spawnPoint.Position + Vector3.new(0, 3, 0))  -- Adding an offset to avoid clipping
+                        rootPart.Anchored = true  -- Anchor to stop the player from moving after teleportation
+                        print("Teleported to spawn point successfully and anchored!")
+                    else
+                        print("Error: HumanoidRootPart not found during spawn teleportation!")
+                    end
+                else
+                    print("Error: Spawn point not found!")
+                end
+            else
+                print("Error: LANES folder not found for spawn point!")
+            end
+        end
+
+        task.wait(1) -- Wait 1 second before trying again (cooldown)
+    end
+end
+spawn(teleportPlayer)
+
+-- Auto Place and Upgrade
+local function autoPlaceUnits()
+    local lanes = workspace._BASES:FindFirstChild("player") and workspace._BASES.player:FindFirstChild("LANES")
+    if not lanes then return end
+    local lane = lanes:FindFirstChild("1")
+    if not lane then return end
+    local spawnPoint = lane:FindFirstChild("spawn")
+    if not spawnPoint then return end
+
+    local unitData = {
+        {"{13621330-5691-4f2f-9f8f-874af0f44c17}", "Monet"},
+        {"{24d0de9f-9593-4d37-907b-cde22816b121}", "Speedwagon"},
+        {"{2ea6f28a-a0f0-4752-b00e-a3d28eb432fd}", "Guts"},
+        {"{336d79aa-c1c1-429e-b7d9-7210e47b18b2}", "Judas"}
+    }
+
+    for _, unit in ipairs(unitData) do
+        game:GetService("ReplicatedStorage").endpoints.client_to_server.spawn_unit:InvokeServer(unit[1], CFrame.new(spawnPoint.Position + Vector3.new(math.random(-10, 10), 0, math.random(-10, 10))))
+        print("Placed unit: " .. unit[2])
+        task.wait(0.02)
+    end
+end
+
+local function autoUpgradeUnits()
+    local units = workspace._UNITS:GetChildren()
+    for _, unit in pairs(units) do
+        if unit.Name:lower():find("monet") or unit.Name:lower():find("speedwagon") or unit.Name:lower():find("guts") or unit.Name:lower():find("judar_evolved") then
+            game:GetService("ReplicatedStorage").endpoints.client_to_server.upgrade_unit_ingame:InvokeServer(unit)
+            print("Upgraded unit: " .. unit.Name)
+            task.wait(0.02)
+        end
+    end
+end
+
+spawn(function()
+    while true do
+        autoPlaceUnits()
+        autoUpgradeUnits()
+        task.wait(0.02)
+    end
+end)
+
+-- Function to ensure VoteStart button size is correct
+local function checkAndSetVoteStartSize()
+    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    local voteStart = playerGui:WaitForChild("VoteStart")
+    local holder = voteStart:WaitForChild("Holder")
+    local buttonHolder = holder:WaitForChild("ButtonHolder")
+    local yesButton = buttonHolder:FindFirstChild("Yes")
+
+    if yesButton and yesButton:IsA("TextButton") then
+        if yesButton.Size ~= UDim2.new(0, 5000, 0, 5000) then
+            print("Vote 'Yes' button size incorrect. Correcting size...")
+            yesButton.Size = UDim2.new(0, 5000, 0, 5000)
+        else
+            print("Vote 'Yes' button size is already correct.")
+        end
+    else
+        warn("Vote 'Yes' button missing or invalid!")
+    end
+end
+
+-- Call the function to check and set VoteStart button size
+checkAndSetVoteStartSize()
+
+-- CAPTCHA BYPASS Logic with continuous loop
+local function a1()
+    print("Starting CAPTCHA bypass loop...")
+
+    while true do
+        local b1 = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+        local c1 = b1 and b1:FindFirstChild("NotificationWindows")
+        local d1 = c1 and c1:FindFirstChild("Popups")
+        local e1 = d1 and d1:FindFirstChild("CaptchaWindow")
+
+        if e1 then
+            print("CAPTCHA Detected!")
+
+            -- Resize the "Yes" button inside ButtonHolder
+            local f1 = e1:FindFirstChild("ButtonHolder")
+            if f1 then
+                local g1 = f1:FindFirstChild("Yes")
+                if g1 then
+                    g1.Size = UDim2.new(0, 5000, 0, 5000)
+                    print("Resized 'Yes' button to 5000x5000.")
+                else
+                    print("'Yes' button missing in ButtonHolder!")
+                end
+            else
+                print("ButtonHolder missing in CAPTCHA window.")
+            end
+
+            -- Attempt to bypass CAPTCHA
+            local h1 = e1:FindFirstChild("TypeBox")
+            local i1 = e1:FindFirstChild("Captcha")
+
+            if h1 and i1 then
+                print("Bypassing CAPTCHA...")
+                h1.Text = i1.Text -- Copy CAPTCHA text to input
+                print("CAPTCHA bypassed successfully!")
+            else
+                print("Error: CAPTCHA elements missing, retrying...")
+            end
+        else
+            print("No CAPTCHA window detected, retrying...")
+        end
+
+        task.wait(0.5) -- Delay between checks
+    end
+end
+
+-- Start CAPTCHA bypass function
+spawn(function()
+    a1() -- Continuous CAPTCHA bypass loop
+end)
+
+-- Prevent AFK Kick with obfuscated logic
+local function b2()
+    while true do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local c2 = player.Character.HumanoidRootPart
+            c2.CFrame = c2.CFrame * CFrame.new(0.1, 0, 0)
+        end
+        task.wait(60) -- Prevent AFK by moving every minute
+    end
+end
+
+-- Start AFK prevention function
+spawn(function()
+    b2() -- Prevent AFK
+end)
+
+local resultNext = game.Players.LocalPlayer.PlayerGui.ResultsUI.Holder.Buttons:FindFirstChild("Next")
+if resultNext and resultNext:IsA("GuiButton") then
+    resultNext.Size = UDim2.new(0, 5000, 0, 5000)
+    print("Result 'Next' button size successfully updated!")
+else
+    warn("Result 'Next' button not found or invalid!")
+end
+
+-- Resize the "Next" button
+local function c3()
+    local d3 = player.PlayerGui:WaitForChild("ResultsUI")
+    local e3 = d3:WaitForChild("Finished")
+    local f3 = e3:FindFirstChild("Next")
+
+    if f3 and f3:IsA("TextButton") then
+        f3.Size = UDim2.new(0, 7000, 0, 7000)
+        print("Changed size of 'Next' button successfully!")
+    else
+        warn("Next button missing or invalid!")
+    end
+end
+
+c3() -- Call the function to resize the "Next" button
