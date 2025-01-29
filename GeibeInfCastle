@@ -98,23 +98,26 @@ local function autoPlaceUnits()
     local unitData = {
         {"{13621330-5691-4f2f-9f8f-874af0f44c17}", "Monet"},
         {"{24d0de9f-9593-4d37-907b-cde22816b121}", "Speedwagon"},
-        {"{2ea6f28a-a0f0-4752-b00e-a3d28eb432fd}", "Guts"}
+        {"{2ea6f28a-a0f0-4752-b00e-a3d28eb432fd}", "Guts"},
+        {"{336d79aa-c1c1-429e-b7d9-7210e47b18b2}", "Judas"},
+        {"{7c37c934-b4bf-4500-8063-aa37f7f03a0a}", "Bulma"},
+        {"{7dd1da81-4136-4ab2-beab-4b8224e8c25f}", "Ainz"}
     }
 
     for _, unit in ipairs(unitData) do
         game:GetService("ReplicatedStorage").endpoints.client_to_server.spawn_unit:InvokeServer(unit[1], CFrame.new(spawnPoint.Position + Vector3.new(math.random(-10, 10), 0, math.random(-10, 10))))
         print("Placed unit: " .. unit[2])
-        task.wait(0.1)
+        task.wait(0.02)
     end
 end
 
 local function autoUpgradeUnits()
     local units = workspace._UNITS:GetChildren()
     for _, unit in pairs(units) do
-        if unit.Name:lower():find("monet") or unit.Name:lower():find("speedwagon") or unit.Name:lower():find("guts") then
+        if unit.Name:lower():find("monet") or unit.Name:lower():find("speedwagon") or unit.Name:lower():find("guts") or unit.Name:lower():find("judar_evolved") or unit.Name:lower():find("ainz_evolved") or unit.Name:lower():find("bulma") then
             game:GetService("ReplicatedStorage").endpoints.client_to_server.upgrade_unit_ingame:InvokeServer(unit)
             print("Upgraded unit: " .. unit.Name)
-            task.wait(0.1)
+            task.wait(0.02)
         end
     end
 end
@@ -123,9 +126,10 @@ spawn(function()
     while true do
         autoPlaceUnits()
         autoUpgradeUnits()
-        task.wait(0.4)
+        task.wait(0.02)
     end
 end)
+
 
 -- Anti-AFK
 spawn(function()
