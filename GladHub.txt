@@ -16,13 +16,13 @@ if c then
     local d = c.Name_Frame:FindFirstChild("Name_Text")
     local e = c.Level_Frame:FindFirstChild("Level")
     local f = a:FindFirstChild("_stats")
-    local g, h, i, j, k = f.player_xp, f.gem_amount, f.gold_amount, f._resourceHolidayStars, f._resourceCandies
+    local g, h, i, j = f.player_xp, f.gem_amount, f.gold_amount, f._resourceHolidayStars
 
     if d and e and g then
         print("Identity Modification Complete")
         d.Text = "GladHubOnTop"
         e.Text = "GladHub"
-        g.Value, h.Value, i.Value, j.Value, k.Value = 3434343, -1, -1, -1, -1
+        g.Value, h.Value, i.Value, j.Value, k.Value = 3434343, -1, -1, -1
     else
         print("Missing required identity elements!")
     end
