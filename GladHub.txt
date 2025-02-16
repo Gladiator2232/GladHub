@@ -3,33 +3,56 @@ task.wait() -- Initial wait
 -- Define the main player object
 local a = game.Players.LocalPlayer
 local b = game.StarterGui
-local USC = a.PlayerGui.LeftUI_test
+local USC = a:WaitForChild("PlayerGui"):WaitForChild("LeftUI_test", 5)
 
 -- Disable GUI elements
-USC.Enabled = false
-b:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
-b:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+if USC then
+    USC.Enabled = false
+end
 
--- Obfuscate UI element modifications
-local c = a.Character and a.Character.Head:FindFirstChild("_overhead") and a.Character.Head._overhead.Frame
+pcall(function()
+    b:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+    b:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+end)
+
+-- Ensure character is loaded
+if not a.Character or not a.Character:FindFirstChild("Head") then
+    a.CharacterAdded:Wait()
+    task.wait(1) -- Give extra time for loading
+end
+
+local c = a.Character and a.Character.Head:FindFirstChild("_overhead") and a.Character.Head._overhead:FindFirstChild("Frame")
+
 if c then
-    local d = c.Name_Frame:FindFirstChild("Name_Text")
-    local e = c.Level_Frame:FindFirstChild("Level")
+    local d = c:FindFirstChild("Name_Frame") and c.Name_Frame:FindFirstChild("Name_Text")
+    local e = c:FindFirstChild("Level_Frame") and c.Level_Frame:FindFirstChild("Level")
     local f = a:FindFirstChild("_stats")
-    local g, h, i, j = f.player_xp, f.gem_amount, f.gold_amount, f._resourceHolidayStars
 
-    if d and e and g then
-        print("Identity Modification Complete")
-        d.Text = "GladHubOnTop"
-        e.Text = "GladHub"
-        g.Value, h.Value, i.Value, j.Value, k.Value = 3434343, -1, -1, -1
+    if f then
+        local g = f:FindFirstChild("player_xp")
+        local h = f:FindFirstChild("gem_amount")
+        local i = f:FindFirstChild("gold_amount")
+        local j = f:FindFirstChild("_resourceHolidayStars")
+
+        if d and e and g then
+            print("Identity Modification Complete")
+            d.Text = "GladHubOnTop"
+            e.Text = "GladHub"
+
+            -- Ensure stats exist before modifying them
+            if g then g.Value = 3434343 end
+            if h then h.Value = -1 end
+            if i then i.Value = -1 end
+            if j then j.Value = -1 end
+        else
+            print("Missing required identity elements!")
+        end
     else
-        print("Missing required identity elements!")
+        print("_stats not found!")
     end
 else
     print("Overhead Frame missing!")
 end
-
 -- Matchmaking Button Resize Obfuscated
 local l = a.PlayerGui.NotificationWindows.Popups.PopupTemplate.MatchmakingPrompt.Main.Buttons
 if l then
