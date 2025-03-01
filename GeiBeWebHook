@@ -35,13 +35,17 @@ local function sendPlayerStats(player)
         local data = {
             ["username"] = "GladHub",
             ["avatar_url"] = "https://cdn.discordapp.com/attachments/1327946461551525899/1333096060821966878/Logo.png",
-            ["embeds"] = {{
+            ["embeds"] = { {
                 ["title"] = "**:crossed_swords:Damage Dealt:crossed_swords:**",
                 ["description"] = "||" .. player.DisplayName .. "|| has sent their stats.",
                 ["color"] = tonumber(0x00ff00),  -- Green color
                 ["fields"] = {},
                 ["image"] = {
                     ["url"] = "https://cdn.discordapp.com/attachments/1331144799675224074/1331144999059980359/1.0.0.832_2025.01.21_-_13.07.12.10.gif?ex=67c34ea3&is=67c1fd23&hm=443f7393b5dd3dbb63096f09a7a11fa4906e769e816e295343176ac829ef6dd6&"  -- GIF URL
+                },
+                ["footer"] = {
+                    ["text"] = "**Glad Hub : discord.gg/XbnM4bxHfu**",  -- Footer text
+                    ["icon_url"] = player and player.Character and player.Character:FindFirstChild("Head") and player.Character.Head:FindFirstChild("face") and player.Character.Head.face.TextureId or "https://cdn.discordapp.com/avatars/your_user_id_here/profile_picture.png"  -- Profile picture
                 }
             }}
         }
@@ -64,6 +68,40 @@ local function sendPlayerStats(player)
         }
 
         -- Send the webhook (Exploit-only method)
+        if syn and syn.request then
+            syn.request(requestData)  -- Synapse X
+        elseif http and http.request then
+            http.request(requestData)  -- ScriptWare
+        elseif request then
+            request(requestData)  -- Other executors (including potential custom ones)
+        else
+            warn(":x: Executor does not support HTTP requests!")
+        end
+    else
+        -- If _stats is not found, send an error message to Discord
+        local errorData = {
+            ["username"] = "GladHub",
+            ["avatar_url"] = "https://cdn.discordapp.com/attachments/1327946461551525899/1333096060821966878/Logo.png",
+            ["embeds"] = { {
+                ["title"] = "**:x: Webhook Error :x:**",
+                ["description"] = "Error: Stats data not found for player " .. player.DisplayName .. ". Please contact support.",
+                ["color"] = tonumber(0xff0000),  -- Red color
+                ["footer"] = {
+                    ["text"] = "**Glad Hub : discord.gg/XbnM4bxHfu**",  -- Footer text
+                    ["icon_url"] = "https://cdn.discordapp.com/avatars/your_user_id_here/profile_picture.png"  -- Default icon
+                }
+            }}
+        }
+
+        -- Send the error message webhook
+        local requestData = {
+            Url = webhookURL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(errorData)
+        }
+
+        -- Send the error message (Exploit-only method)
         if syn and syn.request then
             syn.request(requestData)  -- Synapse X
         elseif http and http.request then
