@@ -83,7 +83,7 @@ bgImage.Image = getAsset("icon.png")
 bgImage.Size = UDim2.new(1, 0, 1, 0)
 bgImage.BackgroundTransparency = 1
 bgImage.ImageTransparency = 0.5
-bgImage.ZIndex = 0
+bgImage.ZIndex = 3
 Instance.new("UICorner", bgImage).CornerRadius = UDim.new(0, 12)
 
 local overlay = Instance.new("Frame", main)
@@ -112,6 +112,7 @@ close.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
 close.TextColor3 = Color3.fromRGB(255, 80, 80)
 close.Font = Enum.Font.GothamBold
 close.TextSize = 16
+close.ZIndex = 999
 Instance.new("UICorner", close).CornerRadius = UDim.new(1, 0)
 close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
@@ -428,3 +429,30 @@ while true do
         end
     end
 end
+
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        local g = CoreGui:FindFirstChild("GladHubUI")
+        if g then g.Enabled = not g.Enabled end
+    end
+end)
+
+
+-- 🧼 Hide annoying HUD notifications
+task.spawn(function()
+    local ok, err = pcall(function()
+        local gui = LocalPlayer:WaitForChild("PlayerGui", 5)
+        if gui then
+            local hud = gui:WaitForChild("ScreenGui", 5)
+            if hud then
+                local bar = hud:FindFirstChild("HUD")
+                if bar and bar:FindFirstChild("Hotbar") and bar.Hotbar:FindFirstChild("Notifications") then
+                    bar.Hotbar.Notifications.Visible = false
+                end
+            end
+        end
+    end)
+    if not ok then
+        warn("❌ Failed to hide HUD.Notifications:", err)
+    end
+end)
