@@ -24,7 +24,7 @@ end
 
 --[[ 🔒 Advanced Obfuscation by Request ]]
 local G = game
-local S = G:GetService
+local S = G.GetService
 local _P = S(G, "Players")
 local _R = S(G, "ReplicatedStorage")
 local _RS = S(G, "RunService")
@@ -135,7 +135,7 @@ task.spawn(function()
     end
 end)
 
-    "\x41\x78\x6F\x6C\x6F\x74\x6C", "Bass", "Blobfish", "Bluegill", "Clownfish", "Frostfin",
+   local _FL = { "\x41\x78\x6F\x6C\x6F\x74\x6C", "Bass", "Blobfish", "Bluegill", "Clownfish", "Frostfin",
     "Great White", "Hammer Head", "Koi", "Mako Shark", "Megalodon", "Nessie",
     "Perch", "Pike", "Piranha", "Pufferfish", "Salmon", "Seahorse",
     "Sharky", "Spacer", "Template", "Tropical Fish", "Turtle"
