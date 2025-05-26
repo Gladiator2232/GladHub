@@ -10,14 +10,19 @@ local images = {
 for name, data in pairs(images) do
     if not isfile(name) then
         local success, err = pcall(function()
-            local decoded = game:HttpGet("data:image/png;base64,"..data) -- Fallback decode
-            writefile(name, syn and syn.crypt.base64.decode(data) or game:HttpGet("data:image/png;base64,"..data))
+            local decoded = syn and syn.crypt.base64.decode(data) or nil
+            if decoded then
+                writefile(name, decoded)
+            else
+                warn("⚠️ Executor doesn't support base64.decode")
+            end
         end)
         if not success then
             warn("❌ Failed to write " .. name .. ": " .. tostring(err))
         end
     end
 end
+
 
 
 
@@ -67,10 +72,6 @@ local _FDL = {
 
 -- 🎨 UI Creation
 local function __c(x) local i = Instance.new(x) return i end
-local G2 = __c("ScreenGui")
-G2.Name = "\x47\x6C\x61\x64\x55\x49"
-G2.Parent = _CG
-G2.ResetOnSpawn = false
 
 local M = __c("Frame")
 M.Size = UDim2.new(0, 700, 0, 460)
@@ -372,7 +373,7 @@ for _, __ in ipairs(_FOODS) do
 end
 
 -- ⚙️ WalkSpeed / AntiAFK Buttons
-for _, _misc in ipairs({ "WS", "AFK" }) do
+for _, _misc in ipairs({ "WalkSpeed", "AFK" }) do
     local _mBtn = Instance.new("TextButton", _SECS.Misc)
     _mBtn.Size = UDim2.new(1, 0, 0, 35)
     _mBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
@@ -443,12 +444,16 @@ task.spawn(function()
 end)
 
 -- ⌨️ Ctrl = Toggle GUI Visibility
-_U.InputBegan:Connect(function(_inp)
-    if _inp.KeyCode == Enum.KeyCode.LeftControl then
-        local _g = _CG:FindFirstChild("GladUI") or _CG:FindFirstChild("GladHubUI")
-        if _g then _g.Enabled = not _g.Enabled end
+local ui = _CG:FindFirstChild("GladHubUI")
+_U.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.LeftControl then
+        local ui = _CG:FindFirstChild("GladHubUI")
+        if ui then
+            ui.Enabled = not ui.Enabled
+        end
     end
 end)
+
 
 -- 💤 Anti-AFK Obfuscated
 task.spawn(function()
