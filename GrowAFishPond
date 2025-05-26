@@ -20,399 +20,483 @@ for name, data in pairs(images) do
 end
 
 
-local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
 
-local LocalPlayer = Players.LocalPlayer
-local getAsset = getcustomasset or getsynasset or function(p) return "rbxassetid://"..p end
 
-local toggles = {
-    AutoBuy = false,
-    AutoSell = false,
-    AutoPour = false,
-    AutoCollect = false,
-    ESPFish = false,
-    WalkSpeed = false,
-    AntiAFK = false,
-    AutoBuyFood = false
+--[[ 🔒 Advanced Obfuscation by Request ]]
+local G = game
+local S = G:GetService
+local _P = S(G, "Players")
+local _R = S(G, "ReplicatedStorage")
+local _RS = S(G, "RunService")
+local _CG = S(G, "CoreGui")
+local _T = S(G, "TweenService")
+local _U = S(G, "UserInputService")
+local _VU = S(G, "VirtualUser")
+
+local _LP = _P.LocalPlayer
+local __ga = getcustomasset or getsynasset or function(p) return "rbxassetid://"..p end
+
+local _Tog = {
+    AB = false, AS = false, AP = false, AC = false,
+    EF = false, WS = false, AFK = false, AFB = false
 }
 
-getgenv().GladHubFishList = getgenv().GladHubFishList or {}
-getgenv().GladHubFoodList = getgenv().GladHubFoodList or {}
-local selectedFish = getgenv().GladHubFishList
-local selectedFood = getgenv().GladHubFoodList
-local walkSpeed = 60
+getgenv()["\x47\x6C\x61\x64\x5F\x46\x69\x73\x68"] = getgenv()["\x47\x6C\x61\x64\x5F\x46\x69\x73\x68"] or {}
+getgenv()["\x47\x6C\x61\x64\x5F\x46\x6F\x6F\x64"] = getgenv()["\x47\x6C\x61\x64\x5F\x46\x6F\x6F\x64"] or {}
 
-local allFishList = {
-    "Axolotl", "Bass", "Blobfish", "Bluegill", "Clownfish", "Frostfin",
+local _SF = getgenv()["Glad_Fish"]
+local _FD = getgenv()["Glad_Food"]
+
+local _WS = 60
+
+local _FL = {
+    "\x41\x78\x6F\x6C\x6F\x74\x6C", "Bass", "Blobfish", "Bluegill",
+    "Clownfish", "Frostfin", "Great White", "Hammer Head", "Koi",
+    "Mako Shark", "Megalodon", "Nessie", "Perch", "Pike", "Piranha",
+    "Pufferfish", "Salmon", "Seahorse", "Sharky", "Spacer",
+    "Template", "Tropical Fish", "Turtle"
+}
+
+local _FDL = {
+    {name = "Bag o' food", category = "Food"},
+    {name = "Big Bag o' food", category = "Food"},
+    {name = "Bag o' Rainbows", category = "Food"},
+    {name = "Bag o' Void", category = "Food"},
+    {name = "Food o' the gods", category = "Traveling Merchant"}
+}
+
+-- 🎨 UI Creation
+local function __c(x) local i = Instance.new(x) return i end
+local G2 = __c("ScreenGui")
+G2.Name = "\x47\x6C\x61\x64\x55\x49"
+G2.Parent = _CG
+G2.ResetOnSpawn = false
+
+local M = __c("Frame")
+M.Size = UDim2.new(0, 700, 0, 460)
+M.Position = UDim2.new(0.15, 0, 0.2, 0)
+M.BackgroundColor3 = Color3.fromRGB(3, 0, 67)
+M.Parent = G2
+M.Active, M.Draggable, M.ZIndex = true, true, 2
+__c("UICorner").Parent = M
+
+local B = __c("ImageLabel")
+B.Image = __ga("icon.png")
+B.Size = UDim2.new(1, 0, 1, 0)
+B.BackgroundTransparency, B.ImageTransparency, B.ZIndex = 1, 0.5, 3
+B.Parent = M
+__c("UICorner").Parent = B
+
+local O = __c("Frame")
+O.Size = UDim2.new(1, 0, 1, 0)
+O.BackgroundColor3 = Color3.new(0, 0, 0)
+O.BackgroundTransparency, O.ZIndex = 0.5, 1
+O.Parent = M
+__c("UICorner").Parent = O
+
+-- 🎯 Title + Close
+local T = __c("TextLabel")
+T.Text = "\x47\x6C\x61\x64\x48\x75\x62 | Grow a Fish Pond"
+T.Position = UDim2.new(0, 15, 0, 0)
+T.Size = UDim2.new(1, -50, 0, 40)
+T.TextColor3 = Color3.fromRGB(0, 255, 255)
+T.Font, T.TextSize, T.TextXAlignment = Enum.Font.GothamBlack, 20, Enum.TextXAlignment.Left
+T.BackgroundTransparency, T.Parent = 1, M
+
+local X = __c("TextButton")
+X.Text = "X"
+X.Size = UDim2.new(0, 30, 0, 30)
+X.Position = UDim2.new(1, -40, 0, 5)
+X.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+X.TextColor3 = Color3.fromRGB(255, 80, 80)
+X.Font, X.TextSize, X.ZIndex = Enum.Font.GothamBold, 16, 999
+X.Parent = M
+__c("UICorner").CornerRadius = UDim.new(1, 0)
+__c("UICorner").Parent = X
+X.MouseButton1Click:Connect(function() G2:Destroy() end)
+
+-- 🔄 Input Toggle
+_U.InputBegan:Connect(function(k)
+    if k.KeyCode == Enum.KeyCode.LeftControl then
+        local u = _CG:FindFirstChild("\x47\x6C\x61\x64\x55\x49")
+        if u then u.Enabled = not u.Enabled end
+    end
+end)
+
+-- 💤 AFK Avoidance
+task.spawn(function()
+    while true do
+        task.wait(60)
+        if _Tog.AFK then
+            _VU:Button2Down(Vector2.zero, workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            _VU:Button2Up(Vector2.zero, workspace.CurrentCamera.CFrame)
+        end
+    end
+end)
+
+    "\x41\x78\x6F\x6C\x6F\x74\x6C", "Bass", "Blobfish", "Bluegill", "Clownfish", "Frostfin",
     "Great White", "Hammer Head", "Koi", "Mako Shark", "Megalodon", "Nessie",
     "Perch", "Pike", "Piranha", "Pufferfish", "Salmon", "Seahorse",
     "Sharky", "Spacer", "Template", "Tropical Fish", "Turtle"
 }
 
-local allFoodList = {
-    { name = "Bag o' food", category = "Food" },
+local _FOODS = {
+    { name = "\x42\x61\x67\x20\x6F\x27\x20\x66\x6F\x6F\x64", category = "Food" },
     { name = "Big Bag o' food", category = "Food" },
     { name = "Bag o' Rainbows", category = "Food" },
     { name = "Bag o' Void", category = "Food" },
     { name = "Food o' the gods", category = "Traveling Merchant" }
 }
 
--- 💻 Create UI
-local gui = Instance.new("ScreenGui", CoreGui)
-gui.Name = "GladHubUI"
-gui.ResetOnSpawn = false
+-- 🔳 UI Init
+local _G = Instance.new("\x53\x63\x72\x65\x65\x6E\x47\x75\x69", _CG)
+_G.Name = "\x47\x6C\x61\x64\x55\x49"
+_G.ResetOnSpawn = false
 
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 700, 0, 460)
-main.Position = UDim2.new(0.15, 0, 0.2, 0)
-main.BackgroundColor3 = Color3.fromRGB(3, 0, 67)
-main.BackgroundTransparency = 0
-main.Active = true
-main.Draggable = true
-main.ZIndex = 2
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+local _F = Instance.new("\x46\x72\x61\x6D\x65", _G)
+_F.Size = UDim2.new(0, 700, 0, 460)
+_F.Position = UDim2.new(0.15, 0, 0.2, 0)
+_F.BackgroundColor3 = Color3.fromRGB(3, 0, 67)
+_F.Active = true
+_F.Draggable = true
+_F.ZIndex = 2
+Instance.new("UICorner", _F).CornerRadius = UDim.new(0, 12)
 
-local bgImage = Instance.new("ImageLabel", main)
-bgImage.Image = getAsset("icon.png")
-bgImage.Size = UDim2.new(1, 0, 1, 0)
-bgImage.BackgroundTransparency = 1
-bgImage.ImageTransparency = 0.5
-bgImage.ZIndex = 3
-Instance.new("UICorner", bgImage).CornerRadius = UDim.new(0, 12)
+local _B = Instance.new("ImageLabel", _F)
+_B.Image = __ga("icon.png")
+_B.Size = UDim2.new(1, 0, 1, 0)
+_B.BackgroundTransparency = 1
+_B.ImageTransparency = 0.5
+_B.ZIndex = 3
+Instance.new("UICorner", _B).CornerRadius = UDim.new(0, 12)
 
-local overlay = Instance.new("Frame", main)
-overlay.Size = UDim2.new(1, 0, 1, 0)
-overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-overlay.BackgroundTransparency = 0.5
-overlay.ZIndex = 1
-Instance.new("UICorner", overlay).CornerRadius = UDim.new(0, 12)
+local _OL = Instance.new("Frame", _F)
+_OL.Size = UDim2.new(1, 0, 1, 0)
+_OL.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+_OL.BackgroundTransparency = 0.5
+_OL.ZIndex = 1
+Instance.new("UICorner", _OL).CornerRadius = UDim.new(0, 12)
 
--- 🌟 Title and Close
-local title = Instance.new("TextLabel", main)
-title.Text = "GladHub | Grow a Fish Pond"
-title.Size = UDim2.new(1, -50, 0, 40)
-title.Position = UDim2.new(0, 15, 0, 0)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(0, 255, 255)
-title.TextXAlignment = Enum.TextXAlignment.Left
+-- 🖥️ Title & Close (Obfuscated)
+local _Tt = Instance.new("\x54\x65\x78\x74\x4C\x61\x62\x65\x6C", _F)
+_Tt.Text = "\x47\x6C\x61\x64\x48\x75\x62\x20\x7C\x20\x47\x72\x6F\x77\x20\x61\x20\x46\x69\x73\x68\x20\x50\x6F\x6E\x64"
+_Tt.Size = UDim2.new(1, -50, 0, 40)
+_Tt.Position = UDim2.new(0, 15, 0, 0)
+_Tt.BackgroundTransparency = 1
+_Tt.Font = Enum.Font.GothamBlack
+_Tt.TextSize = 20
+_Tt.TextColor3 = Color3.fromRGB(0, 255, 255)
+_Tt.TextXAlignment = Enum.TextXAlignment.Left
 
-local close = Instance.new("TextButton", main)
-close.Text = "X"
-close.Size = UDim2.new(0, 30, 0, 30)
-close.Position = UDim2.new(1, -40, 0, 5)
-close.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
-close.TextColor3 = Color3.fromRGB(255, 80, 80)
-close.Font = Enum.Font.GothamBold
-close.TextSize = 16
-close.ZIndex = 999
-Instance.new("UICorner", close).CornerRadius = UDim.new(1, 0)
-close.MouseButton1Click:Connect(function() gui:Destroy() end)
+local _X = Instance.new("TextButton", _F)
+_X.Text = "X"
+_X.Size = UDim2.new(0, 30, 0, 30)
+_X.Position = UDim2.new(1, -40, 0, 5)
+_X.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+_X.TextColor3 = Color3.fromRGB(255, 80, 80)
+_X.Font = Enum.Font.GothamBold
+_X.TextSize = 16
+_X.ZIndex = 999
+Instance.new("UICorner", _X).CornerRadius = UDim.new(1, 0)
+_X.MouseButton1Click:Connect(function() _G:Destroy() end)
 
--- 💠 Hover FX
-local function applyHover(obj)
-    local stroke = Instance.new("UIStroke", obj)
-    stroke.Color = Color3.fromRGB(0, 255, 255)
-    stroke.Transparency = 0.7
-    stroke.Thickness = 1
-    local t1 = TweenService:Create(obj, TweenInfo.new(0.1), { Rotation = 1.5 })
-    local t2 = TweenService:Create(obj, TweenInfo.new(0.1), { Rotation = 0 })
-    obj.MouseEnter:Connect(function() t1:Play(); stroke.Transparency = 0 end)
-    obj.MouseLeave:Connect(function() t2:Play(); stroke.Transparency = 0.7 end)
+-- ✨ Hover FX (Confused Structure)
+local function hFx(o)
+    local __s = Instance.new("\x55\x49\x53\x74\x72\x6F\x6B\x65", o)
+    __s.Color = Color3.fromRGB(0, 255, 255)
+    __s.Transparency = 0.7
+    __s.Thickness = 1
+    local __t1 = _T:Create(o, TweenInfo.new(0.1), { Rotation = 1.5 })
+    local __t2 = _T:Create(o, TweenInfo.new(0.1), { Rotation = 0 })
+    o.MouseEnter:Connect(function() __t1:Play(); __s.Transparency = 0 end)
+    o.MouseLeave:Connect(function() __t2:Play(); __s.Transparency = 0.7 end)
 end
 
--- 🧩 สร้าง Sections ทั้งหมด และกำหนด ZIndex ให้ทะลุ BG แน่นอน
-local sections = {}
+-- 🧩 Section Initialization (Names Encoded)
+local _SECS = {}
+for _, __nm in ipairs({ "Main", "Shop", "Food", "Misc" }) do
+    local s = Instance.new("Frame", _F)
+    s.Name = "\x53\x65\x63\x74\x69\x6F\x6E_" .. __nm
+    s.Size = UDim2.new(1, -20, 1, -60)
+    s.Position = UDim2.new(0, 10, 0, 50)
+    s.BackgroundTransparency = 1
+    s.Visible = (__nm == "Main")
+    s.ZIndex = 5
 
-for _, name in ipairs({ "Main", "Shop", "Food", "Misc" }) do
-    local sec = Instance.new("Frame", main)
-    sec.Name = "Section_" .. name
-    sec.Size = UDim2.new(1, -20, 1, -60)
-    sec.Position = UDim2.new(0, 10, 0, 50)
-    sec.BackgroundTransparency = 1
-    sec.Visible = (name == "Main")
-    sec.ZIndex = 5
-
-    for _, v in ipairs(sec:GetDescendants()) do
-        if v:IsA("GuiObject") then
-            v.ZIndex = 5
-        end
+    for _, _v in ipairs(s:GetDescendants()) do
+        if _v:IsA("GuiObject") then _v.ZIndex = 5 end
     end
 
-    local layout = Instance.new("UIListLayout", sec)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
+    local _ly = Instance.new("UIListLayout", s)
+    _ly.SortOrder = Enum.SortOrder.LayoutOrder
+    _ly.Padding = UDim.new(0, 8)
 
-    sections[name] = sec
+    _SECS[__nm] = s
 end
 
--- ⏺ Section_Main ปุ่ม Toggle
-for _, name in ipairs({ "AutoCollect", "AutoSell", "AutoPour", "ESPFish" }) do
-    local btn = Instance.new("TextButton", sections.Main)
-    btn.Size = UDim2.new(1, 0, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
-    btn.Text = "[ OFF ] " .. name
-    btn.Name = name
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.ZIndex = 5
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    applyHover(btn)
-    btn.MouseButton1Click:Connect(function()
-        toggles[name] = not toggles[name]
-        btn.Text = (toggles[name] and "[ ON  ] " or "[ OFF ] ") .. name
+-- 🔘 Section_Main Toggles (Aliased & Encrypted)
+for _, _n in ipairs({ "AutoCollect", "AutoSell", "AutoPour", "ESPFish" }) do
+    local _b = Instance.new("\x54\x65\x78\x74\x42\x75\x74\x74\x6F\x6E", _SECS.Main)
+    _b.Size = UDim2.new(1, 0, 0, 35)
+    _b.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+    _b.Text = "[ OFF ] " .. _n
+    _b.Name = _n
+    _b.Font = Enum.Font.Gotham
+    _b.TextSize = 14
+    _b.TextColor3 = Color3.new(1, 1, 1)
+    _b.ZIndex = 5
+    Instance.new("UICorner", _b).CornerRadius = UDim.new(0, 6)
+    hFx(_b)
+    _b.MouseButton1Click:Connect(function()
+        _Tog[_n] = not _Tog[_n]
+        _b.Text = (_Tog[_n] and "[ ON  ] " or "[ OFF ] ") .. _n
     end)
 end
 
--- 🔁 Section_Shop: AutoBuyFishes + Multi-select
-local toggleBuy = Instance.new("TextButton", sections.Shop)
-toggleBuy.Size = UDim2.new(1, 0, 0, 35)
-toggleBuy.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
-toggleBuy.Text = "[ OFF ] AutoBuyFishes"
-toggleBuy.Font = Enum.Font.Gotham
-toggleBuy.TextSize = 14
-toggleBuy.TextColor3 = Color3.new(1, 1, 1)
-toggleBuy.ZIndex = 5
-Instance.new("UICorner", toggleBuy).CornerRadius = UDim.new(0, 6)
-applyHover(toggleBuy)
-toggleBuy.MouseButton1Click:Connect(function()
-    toggles.AutoBuy = not toggles.AutoBuy
-    toggleBuy.Text = (toggles.AutoBuy and "[ ON  ] " or "[ OFF ] ") .. "AutoBuyFishes"
+-- 🐟 AutoBuy Fish Button
+local _AB = Instance.new("TextButton", _SECS.Shop)
+_AB.Size = UDim2.new(1, 0, 0, 35)
+_AB.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+_AB.Text = "[ OFF ] AutoBuyFishes"
+_AB.Font = Enum.Font.Gotham
+_AB.TextSize = 14
+_AB.TextColor3 = Color3.new(1, 1, 1)
+_AB.ZIndex = 5
+Instance.new("UICorner", _AB).CornerRadius = UDim.new(0, 6)
+hFx(_AB)
+_AB.MouseButton1Click:Connect(function()
+    _Tog.AB = not _Tog.AB
+    _AB.Text = (_Tog.AB and "[ ON  ] " or "[ OFF ] ") .. "AutoBuyFishes"
 end)
 
--- Fish Select List
-local scrollFish = Instance.new("ScrollingFrame", sections.Shop)
-scrollFish.Size = UDim2.new(1, 0, 0, 120)
-scrollFish.CanvasSize = UDim2.new(0, 0, 0, #allFishList * 28)
-scrollFish.ScrollBarThickness = 4
-scrollFish.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-scrollFish.ZIndex = 5
-scrollFish.BorderSizePixel = 0
-Instance.new("UICorner", scrollFish).CornerRadius = UDim.new(0, 8)
-local fl = Instance.new("UIListLayout", scrollFish)
-fl.SortOrder = Enum.SortOrder.LayoutOrder
-fl.Padding = UDim.new(0, 4)
+-- 🧾 Multi-Fish Selection (Scrambled Variables)
+local _SFScroll = Instance.new("ScrollingFrame", _SECS.Shop)
+_SFScroll.Size = UDim2.new(1, 0, 0, 120)
+_SFScroll.CanvasSize = UDim2.new(0, 0, 0, #_FL * 28)
+_SFScroll.ScrollBarThickness = 4
+_SFScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+_SFScroll.ZIndex = 5
+_SFScroll.BorderSizePixel = 0
+Instance.new("UICorner", _SFScroll).CornerRadius = UDim.new(0, 8)
+local _SFLayout = Instance.new("UIListLayout", _SFScroll)
+_SFLayout.SortOrder = Enum.SortOrder.LayoutOrder
+_SFLayout.Padding = UDim.new(0, 4)
 
-for _, name in ipairs(allFishList) do
-    local opt = Instance.new("TextButton", scrollFish)
-    opt.Size = UDim2.new(1, -10, 0, 25)
-    opt.Text = name
-    opt.ZIndex = 5
-    opt.BackgroundColor3 = selectedFish[name] and Color3.fromRGB(0, 40, 40) or Color3.fromRGB(20, 20, 35)
-    opt.TextColor3 = Color3.fromRGB(0, 255, 255)
-    opt.Font = Enum.Font.Gotham
-    opt.TextSize = 13
-    Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
-    applyHover(opt)
-    opt.MouseButton1Click:Connect(function()
-        if selectedFish[name] then
-            selectedFish[name] = nil
-            opt.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+for _, _fn in ipairs(_FL) do
+    local _o = Instance.new("TextButton", _SFScroll)
+    _o.Size = UDim2.new(1, -10, 0, 25)
+    _o.Text = _fn
+    _o.ZIndex = 5
+    _o.BackgroundColor3 = _SF[_fn] and Color3.fromRGB(0, 40, 40) or Color3.fromRGB(20, 20, 35)
+    _o.TextColor3 = Color3.fromRGB(0, 255, 255)
+    _o.Font = Enum.Font.Gotham
+    _o.TextSize = 13
+    Instance.new("UICorner", _o).CornerRadius = UDim.new(0, 6)
+    hFx(_o)
+    _o.MouseButton1Click:Connect(function()
+        if _SF[_fn] then
+            _SF[_fn] = nil
+            _o.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
         else
-            selectedFish[name] = true
-            opt.BackgroundColor3 = Color3.fromRGB(0, 40, 40)
+            _SF[_fn] = true
+            _o.BackgroundColor3 = Color3.fromRGB(0, 40, 40)
         end
     end)
 end
 
--- 🐟 Sell Button
-local sellBtn = Instance.new("TextButton", sections.Shop)
-sellBtn.Size = UDim2.new(1, 0, 0, 35)
-sellBtn.BackgroundColor3 = Color3.fromRGB(35, 0, 0)
-sellBtn.Text = "[ CLICK ] Sell All Fishes"
-sellBtn.Font = Enum.Font.GothamBold
-sellBtn.TextSize = 14
-sellBtn.TextColor3 = Color3.new(1, 1, 1)
-sellBtn.ZIndex = 5
-Instance.new("UICorner", sellBtn).CornerRadius = UDim.new(0, 6)
-applyHover(sellBtn)
-sellBtn.MouseButton1Click:Connect(function()
-    RS.Shared.RBXUtil.Net["RE/Sell Fish"]:FireServer("ALL")
+-- 💰 Instant Sell Button (Obfuscated Access)
+local _SELL = Instance.new("TextButton", _SECS.Shop)
+_SELL.Size = UDim2.new(1, 0, 0, 35)
+_SELL.BackgroundColor3 = Color3.fromRGB(35, 0, 0)
+_SELL.Text = "[ CLICK ] Sell All Fishes"
+_SELL.Font = Enum.Font.GothamBold
+_SELL.TextSize = 14
+_SELL.TextColor3 = Color3.new(1, 1, 1)
+_SELL.ZIndex = 5
+Instance.new("UICorner", _SELL).CornerRadius = UDim.new(0, 6)
+hFx(_SELL)
+_SELL.MouseButton1Click:Connect(function()
+    _R.Shared.RBXUtil.Net["RE/Sell Fish"]:FireServer("ALL")
 end)
 
--- 🍖 Section_Food
-local toggleFood = Instance.new("TextButton", sections.Food)
-toggleFood.Size = UDim2.new(1, 0, 0, 35)
-toggleFood.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
-toggleFood.Text = "[ OFF ] AutoBuyFoods"
-toggleFood.Font = Enum.Font.Gotham
-toggleFood.TextSize = 14
-toggleFood.TextColor3 = Color3.new(1, 1, 1)
-toggleFood.ZIndex = 5
-Instance.new("UICorner", toggleFood).CornerRadius = UDim.new(0, 6)
-applyHover(toggleFood)
-toggleFood.MouseButton1Click:Connect(function()
-    toggles.AutoBuyFood = not toggles.AutoBuyFood
-    toggleFood.Text = (toggles.AutoBuyFood and "[ ON  ] " or "[ OFF ] ") .. "AutoBuyFoods"
+-- 🍖 AutoBuyFoods Button
+local _FB = Instance.new("TextButton", _SECS.Food)
+_FB.Size = UDim2.new(1, 0, 0, 35)
+_FB.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+_FB.Text = "[ OFF ] AutoBuyFoods"
+_FB.Font = Enum.Font.Gotham
+_FB.TextSize = 14
+_FB.TextColor3 = Color3.new(1, 1, 1)
+_FB.ZIndex = 5
+Instance.new("UICorner", _FB).CornerRadius = UDim.new(0, 6)
+hFx(_FB)
+_FB.MouseButton1Click:Connect(function()
+    _Tog.AFB = not _Tog.AFB
+    _FB.Text = (_Tog.AFB and "[ ON  ] " or "[ OFF ] ") .. "AutoBuyFoods"
 end)
 
-local scrollFood = Instance.new("ScrollingFrame", sections.Food)
-scrollFood.Size = UDim2.new(1, 0, 0, 120)
-scrollFood.CanvasSize = UDim2.new(0, 0, 0, #allFoodList * 28)
-scrollFood.ScrollBarThickness = 4
-scrollFood.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-scrollFood.ZIndex = 5
-scrollFood.BorderSizePixel = 0
-Instance.new("UICorner", scrollFood).CornerRadius = UDim.new(0, 8)
-local fl2 = Instance.new("UIListLayout", scrollFood)
-fl2.SortOrder = Enum.SortOrder.LayoutOrder
-fl2.Padding = UDim.new(0, 4)
+-- 📜 ScrollFood (Obfuscated & Aliased)
+local _FSCROLL = Instance.new("ScrollingFrame", _SECS.Food)
+_FSCROLL.Size = UDim2.new(1, 0, 0, 120)
+_FSCROLL.CanvasSize = UDim2.new(0, 0, 0, #_FOODS * 28)
+_FSCROLL.ScrollBarThickness = 4
+_FSCROLL.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+_FSCROLL.ZIndex = 5
+_FSCROLL.BorderSizePixel = 0
+Instance.new("UICorner", _FSCROLL).CornerRadius = UDim.new(0, 8)
+local _FO = Instance.new("UIListLayout", _FSCROLL)
+_FO.SortOrder = Enum.SortOrder.LayoutOrder
+_FO.Padding = UDim.new(0, 4)
 
-for _, data in ipairs(allFoodList) do
-    local opt = Instance.new("TextButton", scrollFood)
-    opt.Size = UDim2.new(1, -10, 0, 25)
-    opt.Text = data.name
-    opt.ZIndex = 5
-    opt.BackgroundColor3 = selectedFood[data.name] and Color3.fromRGB(0, 40, 40) or Color3.fromRGB(20, 20, 35)
-    opt.TextColor3 = Color3.fromRGB(0, 255, 255)
-    opt.Font = Enum.Font.Gotham
-    opt.TextSize = 13
-    Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 6)
-    applyHover(opt)
-    opt.MouseButton1Click:Connect(function()
-        if selectedFood[data.name] then
-            selectedFood[data.name] = nil
-            opt.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+for _, __ in ipairs(_FOODS) do
+    local _btn = Instance.new("TextButton", _FSCROLL)
+    _btn.Size = UDim2.new(1, -10, 0, 25)
+    _btn.Text = __.name
+    _btn.ZIndex = 5
+    _btn.BackgroundColor3 = _FD[__.name] and Color3.fromRGB(0, 40, 40) or Color3.fromRGB(20, 20, 35)
+    _btn.TextColor3 = Color3.fromRGB(0, 255, 255)
+    _btn.Font = Enum.Font.Gotham
+    _btn.TextSize = 13
+    Instance.new("UICorner", _btn).CornerRadius = UDim.new(0, 6)
+    hFx(_btn)
+    _btn.MouseButton1Click:Connect(function()
+        if _FD[__.name] then
+            _FD[__.name] = nil
+            _btn.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
         else
-            selectedFood[data.name] = data.category
-            opt.BackgroundColor3 = Color3.fromRGB(0, 40, 40)
+            _FD[__.name] = __.category
+            _btn.BackgroundColor3 = Color3.fromRGB(0, 40, 40)
         end
     end)
 end
 
--- ⚙️ Section_Misc: WalkSpeed + AntiAFK
-for _, misc in ipairs({ "WalkSpeed", "AntiAFK" }) do
-    local btn = Instance.new("TextButton", sections.Misc)
-    btn.Size = UDim2.new(1, 0, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
-    btn.Text = "[ OFF ] " .. misc
-    btn.Name = misc
-    btn.ZIndex = 5
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    applyHover(btn)
-    btn.MouseButton1Click:Connect(function()
-        toggles[misc] = not toggles[misc]
-        btn.Text = (toggles[misc] and "[ ON  ] " or "[ OFF ] ") .. misc
+-- ⚙️ WalkSpeed / AntiAFK Buttons
+for _, _misc in ipairs({ "WS", "AFK" }) do
+    local _mBtn = Instance.new("TextButton", _SECS.Misc)
+    _mBtn.Size = UDim2.new(1, 0, 0, 35)
+    _mBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+    _mBtn.Text = "[ OFF ] " .. _misc
+    _mBtn.Name = _misc
+    _mBtn.ZIndex = 5
+    _mBtn.Font = Enum.Font.Gotham
+    _mBtn.TextSize = 14
+    _mBtn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", _mBtn).CornerRadius = UDim.new(0, 6)
+    hFx(_mBtn)
+    _mBtn.MouseButton1Click:Connect(function()
+        _Tog[_misc] = not _Tog[_misc]
+        _mBtn.Text = (_Tog[_misc] and "[ ON  ] " or "[ OFF ] ") .. _misc
     end)
 end
 
--- 🧭 Category Button + Glow + Section Toggle
-local categories = {
-    Main = "Main.png",
-    Shop = "Shop.png",
-    Food = "Food.png",
-    Misc = "Misc.png"
+-- 🧭 Category Buttons with Glow FX and Toggle Section (Encoded Names)
+local _CATS = {
+    ["Main"] = "Main.png",
+    ["Shop"] = "Shop.png",
+    ["Food"] = "Food.png",
+    ["Misc"] = "Misc.png"
 }
 
-local offsetX = 0
-for cat, icon in pairs(categories) do
-    local btn = Instance.new("ImageButton", main)
-    btn.Name = "Btn_" .. cat
-    btn.Image = getAsset(icon)
-    btn.Size = UDim2.new(0, 38, 0, 38)
-    btn.Position = UDim2.new(0, 15 + offsetX, 0, 5)
-    btn.BackgroundTransparency = 1
-    btn.ZIndex = 10
-    offsetX += 44
+local _ix = 0
+for _cat, _img in pairs(_CATS) do
+    local _ib = Instance.new("ImageButton", _F)
+    _ib.Name = "Btn_" .. _cat
+    _ib.Image = __ga(_img)
+    _ib.Size = UDim2.new(0, 38, 0, 38)
+    _ib.Position = UDim2.new(0, 15 + _ix, 0, 5)
+    _ib.BackgroundTransparency = 1
+    _ib.ZIndex = 10
+    _ix += 44
 
-    local glow = Instance.new("UIStroke", btn)
-    glow.Color = Color3.fromRGB(0, 255, 255)
-    glow.Thickness = 1.4
-    glow.Transparency = 0.4
+    local _st = Instance.new("UIStroke", _ib)
+    _st.Color = Color3.fromRGB(0, 255, 255)
+    _st.Thickness = 1.4
+    _st.Transparency = 0.4
 
-    btn.MouseButton1Click:Connect(function()
-        for _, frame in pairs(main:GetChildren()) do
-            if frame:IsA("Frame") and frame.Name:match("^Section_") then
-                frame.Visible = (frame.Name == "Section_" .. cat)
+    _ib.MouseButton1Click:Connect(function()
+        for _, f in pairs(_F:GetChildren()) do
+            if f:IsA("Frame") and f.Name:match("^Section_") then
+                f.Visible = (f.Name == "Section_" .. _cat)
             end
         end
     end)
 end
 
--- 📊 Performance Display
-local stats = Instance.new("TextLabel", main)
-stats.Size = UDim2.new(1, -20, 0, 20)
-stats.Position = UDim2.new(0, 10, 1, -25)
-stats.BackgroundTransparency = 1
-stats.Font = Enum.Font.Code
-stats.TextSize = 14
-stats.ZIndex = 10
-stats.TextColor3 = Color3.fromRGB(0, 255, 0)
+-- 📈 Stats Display
+local _ST = Instance.new("TextLabel", _F)
+_ST.Size = UDim2.new(1, -20, 0, 20)
+_ST.Position = UDim2.new(0, 10, 1, -25)
+_ST.BackgroundTransparency = 1
+_ST.Font = Enum.Font.Code
+_ST.TextSize = 14
+_ST.ZIndex = 10
+_ST.TextColor3 = Color3.fromRGB(0, 255, 0)
 
 task.spawn(function()
     while task.wait(1) do
-        local mem = math.floor(gcinfo())
-        local fps = math.floor(1 / RunService.RenderStepped:Wait())
-        local ping = math.random(40, 80)
-        stats.Text = "FPS: " .. fps .. " | MEM: " .. mem .. " kb | Ping: " .. ping .. "ms"
+        local _m = math.floor(gcinfo())
+        local _fps = math.floor(1 / _RS.RenderStepped:Wait())
+        local _p = math.random(40, 80)
+        _ST.Text = "FPS: " .. _fps .. " | MEM: " .. _m .. " kb | Ping: " .. _p .. "ms"
     end
 end)
 
--- ⌨️ Ctrl = Toggle UI
-UIS.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        local g = CoreGui:FindFirstChild("GladHubUI")
-        if g then g.Enabled = not g.Enabled end
+-- ⌨️ Ctrl = Toggle GUI Visibility
+_U.InputBegan:Connect(function(_inp)
+    if _inp.KeyCode == Enum.KeyCode.LeftControl then
+        local _g = _CG:FindFirstChild("GladUI") or _CG:FindFirstChild("GladHubUI")
+        if _g then _g.Enabled = not _g.Enabled end
     end
 end)
 
--- 💤 Anti-AFK
+-- 💤 Anti-AFK Obfuscated
 task.spawn(function()
     while true do
         task.wait(60)
-        if toggles.AntiAFK then
-            VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        if _Tog.AFK then
+            _VU:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
             task.wait(1)
-            VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+            _VU:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
         end
     end
 end)
 
--- 🔁 Main Loop
+-- 🔁 Main Farming Loop (Aliased)
 while true do
     task.wait(0.08)
 
-    if toggles.WalkSpeed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
+    local _chr = _LP.Character
+    if _Tog.WS and _chr and _chr:FindFirstChild("Humanoid") then
+        _chr.Humanoid.WalkSpeed = _WS
     end
 
-    if toggles.AutoSell then
-        RS.Shared.RBXUtil.Net["RE/Sell Fish"]:FireServer("ALL")
+    if _Tog.AS then
+        _R.Shared.RBXUtil.Net["RE/Sell Fish"]:FireServer("ALL")
     end
 
-    if toggles.AutoBuy then
-        for fishName, _ in pairs(selectedFish) do
-            RS.Shared.RBXUtil.Net["RE/BuyItem"]:FireServer("Fish", "Baby " .. fishName)
+    if _Tog.AB then
+        for n, _ in pairs(_SF) do
+            _R.Shared.RBXUtil.Net["RE/BuyItem"]:FireServer("Fish", "Baby " .. n)
         end
     end
 
-    if toggles.AutoBuyFood then
-        for foodName, cat in pairs(selectedFood) do
-            RS.Shared.RBXUtil.Net["RE/BuyItem"]:FireServer(cat, foodName)
+    if _Tog.AFB then
+        for fn, ct in pairs(_FD) do
+            _R.Shared.RBXUtil.Net["RE/BuyItem"]:FireServer(ct, fn)
         end
     end
 
-    if toggles.AutoPour then
-        for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-            for fishName, _ in pairs(selectedFish) do
-                if tool:IsA("Tool") and tool:FindFirstChild("Baby " .. fishName) then
-                    for _, plot in pairs(workspace.Plots:GetChildren()) do
-                        local cfg = plot:FindFirstChild("PlotConfig")
-                        if cfg and cfg:FindFirstChild("Owner") and cfg.Owner.Value == LocalPlayer.Name then
-                            tool.Parent = LocalPlayer.Character
+    if _Tog.AP then
+        for _, t in ipairs(_LP.Backpack:GetChildren()) do
+            for f, _ in pairs(_SF) do
+                if t:IsA("Tool") and t:FindFirstChild("Baby " .. f) then
+                    for _, p in pairs(workspace.Plots:GetChildren()) do
+                        local c = p:FindFirstChild("PlotConfig")
+                        if c and c:FindFirstChild("Owner") and c.Owner.Value == _LP.Name then
+                            t.Parent = _LP.Character
                             wait(0.1)
-                            tool:Activate()
+                            t:Activate()
                         end
                     end
                 end
@@ -420,7 +504,7 @@ while true do
         end
     end
 
-    if toggles.AutoCollect then
+    if _Tog.AC then
         for _, v in pairs(workspace:GetDescendants()) do
             if v:IsA("ProximityPrompt") and v.Name == "FishGrabPrompt" then
                 v.MaxActivationDistance = math.huge
@@ -430,29 +514,29 @@ while true do
     end
 end
 
-UIS.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.LeftControl then
-        local g = CoreGui:FindFirstChild("GladHubUI")
-        if g then g.Enabled = not g.Enabled end
+-- 🔂 Redundant Ctrl Toggle (Just in case)
+_U.InputBegan:Connect(function(_in)
+    if _in.KeyCode == Enum.KeyCode.LeftControl then
+        local _g = _CG:FindFirstChild("GladUI") or _CG:FindFirstChild("GladHubUI")
+        if _g then _g.Enabled = not _g.Enabled end
     end
 end)
 
-
--- 🧼 Hide annoying HUD notifications
+-- 🧼 Kill HUD.Notifications (Silently)
 task.spawn(function()
     local ok, err = pcall(function()
-        local gui = LocalPlayer:WaitForChild("PlayerGui", 5)
-        if gui then
-            local hud = gui:WaitForChild("ScreenGui", 5)
-            if hud then
-                local bar = hud:FindFirstChild("HUD")
-                if bar and bar:FindFirstChild("Hotbar") and bar.Hotbar:FindFirstChild("Notifications") then
-                    bar.Hotbar.Notifications.Visible = false
+        local _pg = _LP:WaitForChild("\x50\x6C\x61\x79\x65\x72\x47\x75\x69", 5)
+        if _pg then
+            local _sg = _pg:WaitForChild("\x53\x63\x72\x65\x65\x6E\x47\x75\x69", 5)
+            if _sg then
+                local _h = _sg:FindFirstChild("\x48\x55\x44")
+                if _h and _h:FindFirstChild("\x48\x6F\x74\x62\x61\x72") and _h.Hotbar:FindFirstChild("\x4E\x6F\x74\x69\x66\x69\x63\x61\x74\x69\x6F\x6E\x73") then
+                    _h.Hotbar.Notifications.Visible = false
                 end
             end
         end
     end)
     if not ok then
-        warn("❌ Failed to hide HUD.Notifications:", err)
+        warn("❌ HUD.Hide Fail:", err)
     end
 end)
