@@ -540,3 +540,12 @@ task.spawn(function()
         warn("❌ HUD.Hide Fail:", err)
     end
 end)
+
+if getgenv()._GladFishLoaded then return end
+getgenv()._GladFishLoaded = true
+
+local CoreGui = game:GetService("CoreGui")
+local existingUI = CoreGui:FindFirstChild("GladUI")
+if existingUI then
+    existingUI:Destroy()
+end
