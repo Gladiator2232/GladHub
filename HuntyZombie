@@ -1,0 +1,1000 @@
+--[[ 
+    Hunty Zombie Auto Farm (GladHubV2 • Advanced • Instant Prompt)
+    - Farm Zombies (no Humanoid) by reading Head.EntityHealth.HealthBar.Bar.Size.X.Scale
+    - Hover follow (lerp), Anti-Fling, disable collisions while farming
+    - Doors Lure: HallwayDoor.DoorL.Main + all FenceDoor.*.Main (+ watcher)
+    - Objective Rule:
+        • If NO zombies in range & HRP.Y < 800: wait 3s -> trigger Radio instantly
+          then set timer 220s; keep farming; when due -> stop combat, tween to Heli,
+          wait 0.5s -> trigger Heli instantly
+    - Auto-press E while Farm ON
+    - UI: draggable, sliders Hover(4–30)/Scan(100–3000), brand "GladHubV2"
+]]
+--
+
+---------------- Services ----------------
+local Players = game:GetService('Players')
+local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
+local TweenService = game:GetService('TweenService')
+local Stats = game:GetService('Stats')
+local VIM = game:GetService('VirtualInputManager')
+local LP = Players.LocalPlayer
+
+---------------- Config ----------------
+local CFG = {
+    -- Zombie
+    ScanFolderPath = { 'Entities' },
+    ScanRadius = 800, -- UI: 100..3000
+    HoverDistance = 12, -- UI: 4..30
+    AttackDistance = 14,
+    FollowAlpha = 0.24,
+    AttackRate = 0.08,
+    HealthPoll = 0.02,
+
+    -- Safety
+    AntiFling = true,
+    ClampSpeed = 85,
+    NoCollideWhileFarm = true,
+
+    -- TP / Wave
+    TeleportYThreshold = 800,
+    NearSpawnBound = 50,
+
+    -- Doors (Lure)
+    DoorsPath = { 'School', 'Doors' },
+    DoorModelName = 'HallwayDoor',
+    DoorLeftName = 'DoorL',
+    DoorMainName = 'Main',
+
+    -- Legacy extra (still supported)
+    ExtraDoorRoot = { 'School', 'Doors', 'FenceDoor' },
+    ExtraDoorBranch = 'Rooftop Door',
+    ExtraDoorMain = 'Main',
+
+    -- RooftopBoss Objectives
+    BossRootPath = { 'School', 'Rooms', 'RooftopBoss' },
+    HeliPartName = 'HeliObjective',
+    RadioPartName = 'RadioObjective',
+    ObjectiveHover = 8,
+    ApproachMargin = 0.8, -- move slightly inside MaxActivationDistance
+    RadioDelayBefore = 3, -- wait before triggering Radio
+    HeliDelaySeconds = 220, -- 3m40s
+    TravelSpeed = 260, -- studs/sec for HRP tween
+}
+
+---------------- State ----------------
+local Char, Hum, HRP
+local FarmOn, Idle = false, true
+local Target, lastAtk, hpAcc = nil, 0, 0
+
+-- Doors
+local doorRunNeeded, doorRunning = false, false
+local DoorsTouched = setmetatable({}, { __mode = 'k' })
+local wasTP = false
+
+-- Objectives
+local objectiveRunning = false
+local radioPlanned, radioDone = false, false
+local heliDueAt, heliDone = nil, false
+local travelMode = false -- freeze farming while traveling to objectives
+
+-- UI
+local GUI, StatusL, TargetL, PerfL, ToggleBtn
+local KnobDragging = false
+
+---------------- Character ----------------
+local function bindChar()
+    local function onChar(c)
+        Char = c
+        Hum = c:WaitForChild('Humanoid', 5)
+        HRP = c:FindFirstChild('HumanoidRootPart')
+            or c:WaitForChild('HumanoidRootPart', 5)
+        if Hum then
+            pcall(function()
+                Hum.PlatformStand = false
+                Hum.Sit = false
+            end)
+        end
+    end
+    if LP.Character then
+        onChar(LP.Character)
+    end
+    LP.CharacterAdded:Connect(onChar)
+end
+bindChar()
+
+---------------- Helpers ----------------
+local function getNode(path)
+    local n = workspace
+    for _, name in ipairs(path) do
+        n = n:FindFirstChild(name)
+        if not n then
+            return nil
+        end
+    end
+    return n
+end
+
+local function u2x(frameObj)
+    local ok, sz = pcall(function()
+        return frameObj.Size
+    end)
+    if not ok or typeof(sz) ~= 'UDim2' then
+        return nil
+    end
+    return math.clamp(sz.X.Scale or 0, 0, 1)
+end
+
+local function getHP(m)
+    local head = m:FindFirstChild('Head')
+    if not head then
+        return nil
+    end
+    local gui = head:FindFirstChild('EntityHealth')
+        or (
+            head:FindFirstChild('face')
+            and head.face:FindFirstChild('EntityHealth')
+        )
+    if not gui then
+        return nil
+    end
+    local hb = gui:FindFirstChild('HealthBar')
+    if not hb then
+        return nil
+    end
+    local bar = hb:FindFirstChild('Bar')
+    if not bar or not bar:IsA('Frame') then
+        return nil
+    end
+    return u2x(bar)
+end
+
+local function corePart(m)
+    return m:FindFirstChild('HumanoidRootPart')
+        or m.PrimaryPart
+        or m:FindFirstChild('Head')
+        or m:FindFirstChildWhichIsA('BasePart')
+end
+
+local function isZombie(m)
+    local head = m:FindFirstChild('Head')
+    if not head then
+        return false
+    end
+    local hasHealth = (
+        head:FindFirstChild('EntityHealth')
+        or (
+            head:FindFirstChild('face')
+            and head.face:FindFirstChild('EntityHealth')
+        )
+    ) ~= nil
+    return hasHealth and corePart(m) ~= nil
+end
+
+local function alive(m)
+    local h = getHP(m)
+    return h ~= nil and h > 0
+end
+
+local function findNearest(pos)
+    local folder = getNode(CFG.ScanFolderPath)
+    if not folder then
+        return nil
+    end
+    local nearest, nd = nil, math.huge
+    for _, inst in ipairs(folder:GetDescendants()) do
+        if inst:IsA('Model') and isZombie(inst) and alive(inst) then
+            local cp = corePart(inst)
+            if cp then
+                local d = (cp.Position - pos).Magnitude
+                if d < nd and d <= CFG.ScanRadius then
+                    nd, nearest = d, inst
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+local function equipTool()
+    if not Char then
+        return
+    end
+    local t = Char:FindFirstChildOfClass('Tool')
+        or LP.Backpack:FindFirstChildOfClass('Tool')
+    if t and t.Parent ~= Char then
+        t.Parent = Char
+    end
+    return t
+end
+
+local function tryAttack()
+    if travelMode or objectiveRunning then
+        return
+    end
+    if not HRP or not Target then
+        return
+    end
+    local now = tick()
+    if now - lastAtk < CFG.AttackRate then
+        return
+    end
+    lastAtk = now
+    local t = equipTool()
+    if t then
+        pcall(function()
+            t:Activate()
+        end)
+    end
+end
+
+local function setCollide(on)
+    if not Char then
+        return
+    end
+    for _, p in ipairs(Char:GetDescendants()) do
+        if p:IsA('BasePart') then
+            p.CanCollide = on and true or false
+        end
+    end
+end
+
+local function antiFling()
+    if not HRP or not CFG.AntiFling then
+        return
+    end
+    local v = HRP.AssemblyLinearVelocity
+    if v.Magnitude > CFG.ClampSpeed then
+        HRP.AssemblyLinearVelocity = (v.Magnitude > 0)
+                and v.Unit * CFG.ClampSpeed
+            or Vector3.new()
+    end
+    HRP.AssemblyAngularVelocity = Vector3.new()
+end
+
+local function setStatus(t)
+    if StatusL then
+        StatusL.Text = t
+    end
+end
+local function setTargetText(t)
+    if TargetL then
+        TargetL.Text = t
+    end
+end
+local function goIdle()
+    Idle = true
+    Target = nil
+    if CFG.NoCollideWhileFarm then
+        setCollide(true)
+    end
+end
+local function startFarm()
+    Idle = false
+    if CFG.NoCollideWhileFarm then
+        setCollide(false)
+    end
+end
+local function inTP()
+    return HRP and HRP.Position.Y > CFG.TeleportYThreshold
+end
+local function nearSpawn()
+    if not HRP then
+        return false
+    end
+    local p = HRP.Position
+    return math.abs(p.X) <= CFG.NearSpawnBound
+        and math.abs(p.Z) <= CFG.NearSpawnBound
+        and p.Y > -5
+end
+
+---------------- Doors Lure ----------------
+local function collectDoorParts()
+    local list = {}
+    local doorsRoot = getNode(CFG.DoorsPath)
+    if doorsRoot then
+        -- HallwayDoor.DoorL.Main
+        for _, m in ipairs(doorsRoot:GetDescendants()) do
+            if m:IsA('Model') and m.Name == CFG.DoorModelName then
+                local dl = m:FindFirstChild(CFG.DoorLeftName)
+                local main = dl and dl:FindFirstChild(CFG.DoorMainName)
+                if main and main:IsA('BasePart') and not DoorsTouched[main] then
+                    table.insert(list, main)
+                end
+            end
+        end
+        -- FenceDoor .. Main
+        for _, fd in ipairs(doorsRoot:GetChildren()) do
+            if fd:IsA('Model') and fd.Name == 'FenceDoor' then
+                for _, d in ipairs(fd:GetDescendants()) do
+                    if
+                        d:IsA('BasePart')
+                        and d.Name == 'Main'
+                        and not DoorsTouched[d]
+                    then
+                        table.insert(list, d)
+                    end
+                end
+            end
+        end
+    end
+    -- legacy one
+    local extraRoot = getNode(CFG.ExtraDoorRoot)
+    if extraRoot then
+        local branch = extraRoot:FindFirstChild(CFG.ExtraDoorBranch)
+        local main = branch and branch:FindFirstChild(CFG.ExtraDoorMain)
+        if main and main:IsA('BasePart') and not DoorsTouched[main] then
+            table.insert(list, main)
+        end
+    end
+    return list
+end
+
+local function runDoorRoutine()
+    if doorRunning then
+        return
+    end
+    local items = collectDoorParts()
+    if #items == 0 then
+        return
+    end
+    doorRunning = true
+    startFarm()
+    task.spawn(function()
+        for i, part in ipairs(items) do
+            if not (FarmOn and Char and HRP) then
+                break
+            end
+            if part and part.Parent then
+                while
+                    FarmOn
+                    and Char
+                    and HRP
+                    and part.Parent
+                    and (HRP.Position - part.Position).Magnitude > 5
+                do
+                    local targetPos = part.Position
+                        + Vector3.new(0, CFG.HoverDistance, 0)
+                    local alpha = math.clamp(CFG.FollowAlpha + 0.35, 0, 0.85)
+                    HRP.CFrame = HRP.CFrame:Lerp(CFrame.new(targetPos), alpha)
+                    antiFling()
+                    setStatus(('Status: Lure Doors (%d/%d)'):format(i, #items))
+                    setTargetText('Target: ' .. part.Name)
+                    task.wait(0.016)
+                end
+                local touched = false
+                local conn = part.Touched:Connect(function(hit)
+                    if hit and Char and hit:IsDescendantOf(Char) then
+                        touched = true
+                    end
+                end)
+                local t0 = tick()
+                repeat
+                    if not (Char and HRP) then
+                        break
+                    end
+                    HRP.AssemblyLinearVelocity = Vector3.new()
+                    HRP.CFrame = part.CFrame + Vector3.new(0, 2, 0)
+                    task.wait(0.05)
+                until touched or tick() - t0 > 0.6
+                if conn then
+                    conn:Disconnect()
+                end
+                DoorsTouched[part] = true
+            end
+            task.wait(0.05)
+        end
+        doorRunning = false
+    end)
+end
+
+-- watch FenceDoor appearances -> run lure after 1s
+local function attachFenceWatcher()
+    local doorsRoot = getNode(CFG.DoorsPath)
+    if not doorsRoot then
+        return
+    end
+    local function scheduleIfFence(inst)
+        if inst and inst:IsA('Model') and inst.Name == 'FenceDoor' then
+            task.delay(1, function()
+                if FarmOn then
+                    doorRunNeeded = true
+                end
+            end)
+        end
+    end
+    doorsRoot.ChildAdded:Connect(scheduleIfFence)
+    doorsRoot.DescendantAdded:Connect(function(d)
+        if d:IsA('Model') and d.Name == 'FenceDoor' then
+            scheduleIfFence(d)
+        end
+    end)
+end
+attachFenceWatcher()
+
+---------------- Objectives (RooftopBoss) ----------------
+local function getBossNodes()
+    local root = getNode(CFG.BossRootPath)
+    if not root then
+        return nil
+    end
+    local heli = root:FindFirstChild(CFG.HeliPartName)
+    local radio = root:FindFirstChild(CFG.RadioPartName)
+    return root, heli, radio
+end
+
+local function getPrompt(part)
+    if not part then
+        return nil
+    end
+    return part:FindFirstChildOfClass('ProximityPrompt')
+        or part:FindFirstChild('ProximityPrompt')
+end
+
+-- tween HRP (not camera) to a world position
+local currentTween
+local function tweenHRPTo(worldPos)
+    if not (Char and HRP) then
+        return
+    end
+    if currentTween then
+        currentTween:Cancel()
+    end
+    local dist = (HRP.Position - worldPos).Magnitude
+    local dur = math.clamp(dist / CFG.TravelSpeed, 0.15, 3.5)
+    HRP.AssemblyLinearVelocity = Vector3.new()
+    HRP.AssemblyAngularVelocity = Vector3.new()
+    local ti =
+        TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    currentTween =
+        TweenService:Create(HRP, ti, { CFrame = CFrame.new(worldPos) })
+    currentTween:Play()
+    local finished = false
+    currentTween.Completed:Connect(function()
+        finished = true
+    end)
+    while not finished do
+        antiFling()
+        task.wait()
+    end
+end
+
+local function suspendCombat(on)
+    travelMode = on and true or false
+    if on then
+        Target = nil
+        setStatus('Status: Traveling')
+        setTargetText('Target: Objective')
+    end
+end
+
+-- move into prompt range (use MaxActivationDistance with margin)
+local function approachForPrompt(part, prompt)
+    if not (Char and HRP and part and part.Parent) then
+        return
+    end
+    local maxD = (prompt and prompt.MaxActivationDistance) or 8
+    local hover =
+        math.max(1.5, math.min(CFG.ObjectiveHover, maxD - CFG.ApproachMargin))
+    local target = part.Position + Vector3.new(0, hover, 0)
+    tweenHRPTo(target)
+    HRP.AssemblyLinearVelocity = Vector3.new()
+    task.wait(0.15)
+end
+
+-- trigger instantly; fall back to InputHoldBegin/End with 1 frame
+local function triggerPromptInstant(prompt)
+    if not prompt then
+        return
+    end
+    pcall(function()
+        prompt.HoldDuration = 0
+        prompt.RequiresLineOfSight = false
+    end)
+    local ok = false
+    if typeof(fireproximityprompt) == 'function' then
+        ok = pcall(function()
+            fireproximityprompt(prompt)
+        end)
+    end
+    if not ok then
+        prompt:InputHoldBegin()
+        task.wait() -- 1 frame
+        pcall(function()
+            prompt:InputHoldEnd()
+        end)
+    end
+end
+
+local function pressRadio()
+    objectiveRunning = true
+    suspendCombat(true)
+    setStatus('Status: Objective (Radio)')
+    setTargetText('Target: RadioObjective')
+    local _, _, radio = getBossNodes()
+    local rp = getPrompt(radio)
+    if radio and rp then
+        approachForPrompt(radio, rp)
+        triggerPromptInstant(rp) -- << instant trigger (no hold)
+    end
+    objectiveRunning = false
+    suspendCombat(false)
+end
+
+local function pressHeli()
+    objectiveRunning = true
+    suspendCombat(true)
+    setStatus('Status: Objective (Heli)')
+    setTargetText('Target: HeliObjective')
+    local _, heli, _ = getBossNodes()
+    local hp = getPrompt(heli)
+    if heli and hp then
+        local p = heli.Position + Vector3.new(0, CFG.ObjectiveHover, 0)
+        tweenHRPTo(p)
+        task.wait(0.5) -- wait as requested
+        triggerPromptInstant(hp) -- << instant trigger as well
+        heliDone = true
+        heliDueAt = nil
+    end
+    objectiveRunning = false
+    suspendCombat(false)
+end
+
+---------------- UI (GladHubV2) ----------------
+local function Dragify(frame, dragArea)
+    frame.Active = true
+    dragArea.Active = true
+    local dragging, dragStart, startPos
+    dragArea.InputBegan:Connect(function(input)
+        if
+            input.UserInputType == Enum.UserInputType.MouseButton1
+            and not KnobDragging
+        then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if
+            dragging
+            and input.UserInputType == Enum.UserInputType.MouseMovement
+        then
+            local d = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + d.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + d.Y
+            )
+        end
+    end)
+end
+
+local function makeUI()
+    if GUI and GUI.Parent then
+        return
+    end
+    local gui = Instance.new('ScreenGui')
+    gui.Name = 'HuntyZombieAF_UI'
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.DisplayOrder = 1e6
+    gui.Parent = (gethui and gethui())
+        or game:FindFirstChildOfClass('CoreGui')
+        or LP:FindFirstChildOfClass('PlayerGui')
+
+    local frame = Instance.new('Frame')
+    frame.Name = 'Main'
+    frame.Size = UDim2.fromOffset(380, 280)
+    frame.Position = UDim2.new(0.5, -190, 0.25, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+    frame.BorderSizePixel = 0
+    frame.ClipsDescendants = true
+    frame.Parent = gui
+    Instance.new('UICorner', frame).CornerRadius = UDim.new(0, 14)
+    local stroke = Instance.new('UIStroke', frame)
+    stroke.Thickness = 1
+    stroke.Color = Color3.fromRGB(65, 65, 75)
+    local pad = Instance.new('UIPadding', frame)
+    pad.PaddingTop = UDim.new(0, 42)
+    pad.PaddingLeft = UDim.new(0, 14)
+    pad.PaddingRight = UDim.new(0, 14)
+    pad.PaddingBottom = UDim.new(0, 12)
+
+    local titleBar = Instance.new('Frame')
+    titleBar.Name = 'TitleBar'
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
+    titleBar.Parent = frame
+    Instance.new('UICorner', titleBar).CornerRadius = UDim.new(0, 14)
+
+    local title = Instance.new('TextLabel')
+    title.BackgroundTransparency = 1
+    title.Text = 'Auto Farm'
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.TextColor3 = Color3.fromRGB(230, 230, 235)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Size = UDim2.new(1, -120, 1, 0)
+    title.Position = UDim2.fromOffset(14, 0)
+    title.Parent = titleBar
+
+    -- GladHubV2 badge
+    local brand = Instance.new('TextLabel')
+    brand.AnchorPoint = Vector2.new(1, 0.5)
+    brand.Position = UDim2.new(1, -44, 0.5, 0)
+    brand.Size = UDim2.fromOffset(120, 24)
+    brand.BackgroundTransparency = 1
+    brand.Text = 'GladHubV2'
+    brand.Font = Enum.Font.GothamBlack
+    brand.TextSize = 14
+    brand.TextColor3 = Color3.fromRGB(140, 200, 255)
+    brand.Parent = titleBar
+
+    local closeBtn = Instance.new('TextButton')
+    closeBtn.Text = '×'
+    closeBtn.Size = UDim2.fromOffset(36, 28)
+    closeBtn.Position = UDim2.new(1, -44, 0.5, -14)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    closeBtn.TextColor3 = Color3.fromRGB(230, 230, 235)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 18
+    Instance.new('UICorner', closeBtn).CornerRadius = UDim.new(0, 10)
+    closeBtn.Parent = titleBar
+    closeBtn.MouseButton1Click:Connect(function()
+        gui.Enabled = not gui.Enabled
+    end)
+
+    Dragify(frame, titleBar)
+
+    ToggleBtn = Instance.new('TextButton')
+    ToggleBtn.Size = UDim2.fromOffset(120, 34)
+    ToggleBtn.Position = UDim2.fromOffset(0, 0)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 100)
+    ToggleBtn.TextColor3 = Color3.fromRGB(20, 20, 24)
+    ToggleBtn.Font = Enum.Font.GothamBold
+    ToggleBtn.TextSize = 14
+    ToggleBtn.Text = 'FARM: OFF'
+    Instance.new('UICorner', ToggleBtn).CornerRadius = UDim.new(0, 10)
+    ToggleBtn.Parent = frame
+    local function refreshToggle()
+        ToggleBtn.BackgroundColor3 = FarmOn and Color3.fromRGB(60, 185, 120)
+            or Color3.fromRGB(90, 90, 100)
+        ToggleBtn.Text = FarmOn and 'FARM: ON' or 'FARM: OFF'
+    end
+    ToggleBtn.MouseButton1Click:Connect(function()
+        FarmOn = not FarmOn
+        if FarmOn then
+            startFarm()
+        else
+            goIdle()
+        end
+        refreshToggle()
+    end)
+    refreshToggle()
+
+    StatusL = Instance.new('TextLabel')
+    StatusL.BackgroundTransparency = 1
+    StatusL.Size = UDim2.new(1, -10, 0, 18)
+    StatusL.Position = UDim2.fromOffset(0, 40)
+    StatusL.TextXAlignment = Enum.TextXAlignment.Left
+    StatusL.Font = Enum.Font.Gotham
+    StatusL.TextSize = 14
+    StatusL.TextColor3 = Color3.fromRGB(210, 210, 215)
+    StatusL.Text = 'Status: Idle'
+    StatusL.Parent = frame
+
+    TargetL = Instance.new('TextLabel')
+    TargetL.BackgroundTransparency = 1
+    TargetL.Size = UDim2.new(1, -10, 0, 18)
+    TargetL.Position = UDim2.fromOffset(0, 60)
+    TargetL.TextXAlignment = Enum.TextXAlignment.Left
+    TargetL.Font = Enum.Font.Gotham
+    TargetL.TextSize = 14
+    TargetL.TextColor3 = Color3.fromRGB(210, 210, 215)
+    TargetL.Text = 'Target: -'
+    TargetL.Parent = frame
+
+    PerfL = Instance.new('TextLabel')
+    PerfL.BackgroundTransparency = 1
+    PerfL.Size = UDim2.new(1, -10, 0, 18)
+    PerfL.Position = UDim2.fromOffset(0, 80)
+    PerfL.TextXAlignment = Enum.TextXAlignment.Left
+    PerfL.Font = Enum.Font.Gotham
+    PerfL.TextSize = 13
+    PerfL.TextColor3 = Color3.fromRGB(170, 170, 180)
+    PerfL.Text = 'FPS: -  |  Ping: -  |  Exec: '
+        .. (identifyexecutor and identifyexecutor() or 'Unknown')
+    PerfL.Parent = frame
+
+    local function makeSlider(y, label, min, max, def, onChange)
+        local holder = Instance.new('Frame')
+        holder.BackgroundTransparency = 1
+        holder.Size = UDim2.new(1, -10, 0, 50)
+        holder.Position = UDim2.fromOffset(0, y)
+        holder.Parent = frame
+
+        local lbl = Instance.new('TextLabel')
+        lbl.BackgroundTransparency = 1
+        lbl.Size = UDim2.new(1, 0, 0, 18)
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 13
+        lbl.TextColor3 = Color3.fromRGB(220, 220, 225)
+        lbl.Text = string.format('%s: %.0f', label, def)
+        lbl.Parent = holder
+
+        local bar = Instance.new('Frame')
+        bar.Size = UDim2.new(1, -14, 0, 8)
+        bar.Position = UDim2.fromOffset(7, 24)
+        bar.BackgroundColor3 = Color3.fromRGB(45, 45, 54)
+        bar.Parent = holder
+        Instance.new('UICorner', bar).CornerRadius = UDim.new(0, 6)
+
+        local fill = Instance.new('Frame')
+        fill.Size = UDim2.new(0, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(120, 190, 255)
+        fill.Parent = bar
+        Instance.new('UICorner', fill).CornerRadius = UDim.new(0, 6)
+
+        local knob = Instance.new('TextButton')
+        knob.Size = UDim2.fromOffset(16, 16)
+        knob.Position = UDim2.fromOffset(0, -4)
+        knob.Text = ''
+        knob.BackgroundColor3 = Color3.fromRGB(210, 220, 255)
+        knob.Parent = bar
+        Instance.new('UICorner', knob).CornerRadius = UDim.new(1, 0)
+
+        local cur = def
+        local function setVal(v)
+            v = math.clamp(v, min, max)
+            cur = v
+            local a = (v - min) / (max - min)
+            fill.Size = UDim2.new(a, 0, 1, 0)
+            knob.Position = UDim2.new(a, -8, 0, -4)
+            lbl.Text = string.format('%s: %.0f', label, v)
+            if onChange then
+                onChange(math.floor(v + 0.5))
+            end
+        end
+        setVal(def)
+
+        local dragging = false
+        knob.MouseButton1Down:Connect(function()
+            dragging = true
+            KnobDragging = true
+        end)
+        UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+                KnobDragging = false
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(i)
+            if
+                dragging
+                and i.UserInputType == Enum.UserInputType.MouseMovement
+            then
+                local a = math.clamp(
+                    (i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X,
+                    0,
+                    1
+                )
+                setVal(min + a * (max - min))
+            end
+        end)
+        return {
+            get = function()
+                return cur
+            end,
+            set = setVal,
+        }
+    end
+
+    makeSlider(106, 'Hover Distance', 4, 30, CFG.HoverDistance, function(v)
+        CFG.HoverDistance = v
+    end)
+    makeSlider(156, 'Scan Radius', 100, 3000, CFG.ScanRadius, function(v)
+        CFG.ScanRadius = v
+    end)
+
+    task.spawn(function()
+        local fps, last = 60, tick()
+        while gui.Parent do
+            task.wait(0.25)
+            local pingStat = Stats.Network.ServerStatsItem['Data Ping']
+                or Stats.Network.ServerStatsItem['Ping']
+            local ping = pingStat and math.floor(pingStat:GetValue()) or -1
+            local now = tick()
+            local dt = now - last
+            last = now
+            fps = 0.9 * fps + 0.1 * (1 / dt)
+            PerfL.Text = string.format(
+                'FPS: %d  |  Ping: %d  |  Exec: %s',
+                math.floor(fps + 0.5),
+                ping,
+                (identifyexecutor and identifyexecutor() or 'Unknown')
+            )
+        end
+    end)
+
+    GUI = gui
+end
+makeUI()
+
+---------------- Auto press E ----------------
+task.spawn(function()
+    while true do
+        task.wait(0.25)
+        if FarmOn and not inTP() then
+            pcall(function()
+                VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            end)
+        end
+    end
+end)
+
+---------------- Main Loop ----------------
+RunService.Heartbeat:Connect(function(dt)
+    if not (Char and HRP and Char.Parent) then
+        return
+    end
+    if CFG.AntiFling then
+        antiFling()
+    end
+
+    -- TP detection
+    local tpNow = inTP()
+    if tpNow then
+        wasTP = true
+        setStatus('Status: Loading / TP')
+        setTargetText('Target: -')
+    elseif wasTP and nearSpawn() then
+        DoorsTouched = setmetatable({}, { __mode = 'k' })
+        doorRunNeeded = true
+        radioPlanned, radioDone, heliDueAt, heliDone = false, false, nil, false
+        wasTP = false
+    end
+
+    if not FarmOn then
+        setStatus('Status: Idle')
+        return
+    end
+    if tpNow then
+        goIdle()
+        return
+    end
+
+    -- Doors first
+    if doorRunNeeded and not doorRunning and not objectiveRunning then
+        doorRunNeeded = false
+        runDoorRoutine()
+        return
+    end
+    if doorRunning then
+        return
+    end
+
+    -- Health poll
+    hpAcc += dt
+    local poll = false
+    if hpAcc >= CFG.HealthPoll then
+        hpAcc = 0
+        poll = true
+    end
+
+    -- Acquire target (unless traveling/objective)
+    local noTargetNow = false
+    if not travelMode and not objectiveRunning then
+        if
+            not Target
+            or not Target.Parent
+            or (poll and not alive(Target))
+        then
+            local newT = findNearest(HRP.Position)
+            if newT then
+                Target = newT
+                if Idle then
+                    startFarm()
+                end
+            else
+                noTargetNow = true
+            end
+        end
+    else
+        Target = nil
+    end
+
+    -- Objective scheduler: Radio then Heli
+    if
+        noTargetNow
+        and HRP.Position.Y < CFG.TeleportYThreshold
+        and not radioPlanned
+        and not radioDone
+        and not objectiveRunning
+    then
+        radioPlanned = true
+        task.spawn(function()
+            task.wait(CFG.RadioDelayBefore) -- 3s
+            pressRadio()
+            radioDone = true
+            heliDueAt = tick() + CFG.HeliDelaySeconds
+        end)
+    end
+
+    if heliDueAt and not heliDone and not objectiveRunning and not tpNow then
+        if tick() >= heliDueAt then
+            pressHeli()
+            return
+        end
+    end
+
+    if travelMode or objectiveRunning then
+        return
+    end
+
+    if noTargetNow then
+        setStatus('Status: Idle (No Targets)')
+        setTargetText('Target: -')
+        return
+    end
+
+    -- Hover follow + attack
+    local cp = Target and corePart(Target)
+    if not cp then
+        Target = nil
+        return
+    end
+    local desired = cp.Position + Vector3.new(0, CFG.HoverDistance, 0)
+    HRP.CFrame = HRP.CFrame:Lerp(
+        CFrame.new(desired),
+        math.clamp(CFG.FollowAlpha + dt * 2.0, 0, 0.85)
+    )
+    setStatus('Status: Farming')
+    if TargetL then
+        local h = getHP(Target)
+        TargetL.Text = string.format(
+            'Target: %s  HP: %s',
+            Target.Name,
+            h and string.format('%.0f%%', h * 100) or '-'
+        )
+    end
+    if poll and alive(Target) then
+        local d = (HRP.Position - cp.Position).Magnitude
+        if d <= CFG.AttackDistance + CFG.HoverDistance * 0.25 + 4 then
+            tryAttack()
+        end
+    end
+end)
+
+-- hotkey toggle
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then
+        return
+    end
+    if input.KeyCode == Enum.KeyCode.P then
+        FarmOn = not FarmOn
+        if FarmOn then
+            startFarm()
+        else
+            goIdle()
+        end
+        if ToggleBtn then
+            ToggleBtn.BackgroundColor3 = FarmOn and Color3.fromRGB(60, 185, 120)
+                or Color3.fromRGB(90, 90, 100)
+            ToggleBtn.Text = FarmOn and 'FARM: ON' or 'FARM: OFF'
+        end
+    end
+end)
+
+LP.CharacterAdded:Connect(function()
+    goIdle()
+end)
