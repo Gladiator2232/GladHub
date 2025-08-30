@@ -3,11 +3,22 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Debris = game:GetService("Debris")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
 local LP = Players.LocalPlayer
 local char = LP.Character or LP.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 local hum = char:WaitForChild("Humanoid")
+
+-- ========= Config =========
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1317336428044353657/FrRL74QHEfbe09kyuiBgxyKJRVCmZZbAwdOJbCX9WMEC5jxqOYIn_6HL1dfOWW5bkw57"
+local LOGO_URL = "https://media.discordapp.net/attachments/1409454346042605681/1409456122108055602/Logo.png?ex=68b3608d&is=68b20f0d&hm=a4329c6d82ce36932313fa29c3dd65e3df9af7a1c5d1ea7e57735872de74f639&=&format=webp&quality=lossless&width=450&height=450"
+
+-- Detect request function ตาม executor
+local requestfunc = (syn and syn.request) or request or http_request or (fluxus and fluxus.request) or nil
+if not requestfunc then
+    warn("❌ Executor นี้ไม่รองรับ request function")
+end
 
 -- ========= AntiCollide =========
 local function setNoCollide(c)
@@ -85,6 +96,35 @@ local function shuffled(tbl)
 	return copy
 end
 
+-- ========= Webhook =========
+local function sendWebhook()
+	if not requestfunc then return end
+	local goldVal = (LP:FindFirstChild("Data") and LP.Data:FindFirstChild("Gold")) and LP.Data.Gold.Value or "N/A"
+
+	local body = {
+		["content"] = "",
+		["embeds"] = {{
+			["title"] = "Chest Reached!",
+			["type"] = "rich",
+			["color"] = tonumber(0x00ffcc),
+			["fields"] = {
+				{["name"] = "🤔 Player", ["value"] = LP.Name, ["inline"] = true},
+				{["name"] = "💰 Gold", ["value"] = tostring(goldVal), ["inline"] = true}
+			},
+			["thumbnail"] = {["url"] = LOGO_URL},
+			["footer"] = {["text"] = "GladHub - .gg/DYBKhmKf6S"},
+			["timestamp"] = DateTime.now():ToIsoDate()
+		}}
+	}
+
+	requestfunc({
+		Url = WEBHOOK_URL,
+		Method = "POST",
+		Headers = {["Content-Type"] = "application/json"},
+		Body = HttpService:JSONEncode(body)
+	})
+end
+
 -- ========= UI =========
 local gui = Instance.new("ScreenGui")
 gui.Name = "AutoTPUI"
@@ -122,9 +162,7 @@ closeBtn.TextSize = 18
 closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
 closeBtn.BackgroundColor3 = Color3.fromRGB(90,95,120)
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
-closeBtn.MouseButton1Click:Connect(function()
-	gui:Destroy()
-end)
+closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
@@ -152,7 +190,6 @@ local function makeToggle(name, offsetY)
 	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
 	return btn
 end
-
 local tpBtn = makeToggle("AUTO TP",60)
 local jumpBtn = makeToggle("AUTO JUMP",105)
 
@@ -201,7 +238,6 @@ tpBtn.MouseButton1Click:Connect(function()
 	tpBtn.BackgroundColor3 = autoTP and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,100,120)
 	statusLabel.Text = autoTP and "Status : Waiting in zone" or "Status : Idle"
 end)
-
 jumpBtn.MouseButton1Click:Connect(function()
 	autoJump = not autoJump
 	jumpBtn.Text = "AUTO JUMP : "..(autoJump and "ON" or "OFF")
@@ -212,7 +248,6 @@ end)
 local MIN,MAX = 0.1,3.5
 local tpDelay = 3
 local dragging = false
-
 local function applySlider(val)
 	tpDelay = math.clamp(val,MIN,MAX)
 	sliderLabel.Text = ("TP Delay: %.2fs"):format(tpDelay)
@@ -221,7 +256,6 @@ local function applySlider(val)
 	sliderKnob.Position = UDim2.new(alpha,-7,0,-3)
 end
 applySlider(tpDelay)
-
 local function pxToValue(px)
 	local abs = sliderBack.AbsoluteSize.X
 	local alpha = math.clamp(px/abs,0,1)
@@ -232,7 +266,6 @@ local function updateFromMouse()
 	local left = sliderBack.AbsolutePosition.X
 	applySlider(pxToValue(mouse.X-left))
 end
-
 sliderBack.InputBegan:Connect(function(i)
 	if i.UserInputType==Enum.UserInputType.MouseButton1 then
 		dragging=true updateFromMouse()
@@ -254,6 +287,7 @@ local isRunning = false
 local function runSequence()
 	if isRunning or not autoTP then return end
 	isRunning = true
+	sendWebhook() -- ส่ง webhook ตอนเริ่ม loop
 	task.spawn(function()
 		statusLabel.Text = "Status : Running..."
 		local order = shuffled(TP_Positions)
@@ -276,14 +310,10 @@ end
 RunService.Heartbeat:Connect(function()
 	if autoTP and hrp then
 		local pos = hrp.Position
-		-- check เฉพาะ X,Z อยู่ในกรอบ -1000 ถึง 1000
 		if pos.X >= -1000 and pos.X <= 1000 and pos.Z >= -1000 and pos.Z <= 1000 then
-			if not isRunning then
-				runSequence()
-			end
+			if not isRunning then runSequence() end
 		end
 	end
-	-- Auto Jump
 	if autoJump and hum then
 		if hum.FloorMaterial ~= Enum.Material.Air then
 			hum:ChangeState(Enum.HumanoidStateType.Jumping)
