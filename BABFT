@@ -246,7 +246,7 @@ end)
 
 -- ========= Slider Logic =========
 local MIN,MAX = 0.1,3.5
-local tpDelay = 3
+local tpDelay = 2.5
 local dragging = false
 local function applySlider(val)
 	tpDelay = math.clamp(val,MIN,MAX)
