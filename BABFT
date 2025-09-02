@@ -15,57 +15,45 @@ local hum = char:WaitForChild("Humanoid")
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1317336428044353657/FrRL74QHEfbe09kyuiBgxyKJRVCmZZbAwdOJbCX9WMEC5jxqOYIn_6HL1dfOWW5bkw57"
 local LOGO_URL = "https://media.discordapp.net/attachments/1409454346042605681/1409456122108055602/Logo.png?ex=68b3608d&is=68b20f0d&hm=a4329c6d82ce36932313fa29c3dd65e3df9af7a1c5d1ea7e57735872de74f639&=&format=webp&quality=lossless&width=450&height=450"
 
--- Detect request function ตาม executor
 local requestfunc = (syn and syn.request) or request or http_request or (fluxus and fluxus.request) or nil
-if not requestfunc then
-    warn("❌ Executor นี้ไม่รองรับ request function")
-end
+if not requestfunc then warn("❌ Executor ไม่รองรับ request") end
 
--- ========= AntiCollide =========
-local function setNoCollide(c)
+-- ========= NoClip (ทำงานทันที) =========
+local function noClipChar(c)
 	for _, part in ipairs(c:GetDescendants()) do
 		if part:IsA("BasePart") then
 			part.CanCollide = false
 		end
 	end
 end
-setNoCollide(char)
+noClipChar(char)
 LP.CharacterAdded:Connect(function(newChar)
 	char = newChar
 	hrp = newChar:WaitForChild("HumanoidRootPart")
 	hum = newChar:WaitForChild("Humanoid")
 	task.wait(1)
-	setNoCollide(newChar)
-end)
-task.spawn(function()
-	while task.wait(2) do
-		if LP.Character then
-			setNoCollide(LP.Character)
-		end
-	end
+	noClipChar(newChar)
 end)
 
 -- ========= Positions =========
 local TP_Positions = {
-	Vector3.new(-57.28716278076172, 47.46842575073242, 1191.819091796875),
-	Vector3.new(-39.0659294128418, 39.94337463378906, 1444.55859375),
-	Vector3.new(-46.22311019897461, 39.96107482910156, 2436.05908203125),
-	Vector3.new(-55.91603469848633, 46.640018463134766, 3139.34033203125),
-	Vector3.new(-52.28993606567383, 53.98092269897461, 3874.32373046875),
-	Vector3.new(-54.77340316772461, 61.335853576660156, 4601.84033203125),
-	Vector3.new(-52.72859573364258, 60.06972122192383, 5405.474609375),
-	Vector3.new(-40.939456939697266, 46.907894134521484, 6142.3994140625),
-	Vector3.new(-45.882362365722656, 58.55205535888672, 6887.951171875),
-	Vector3.new(-57.181121826171875, 82.80756378173828, 7735.1533203125),
+	Vector3.new(-57.287,47.468,1191.819),
+	Vector3.new(-39.065,39.943,1444.558),
+	Vector3.new(-46.223,39.961,2436.059),
+	Vector3.new(-55.916,46.640,3139.340),
+	Vector3.new(-52.289,53.980,3874.323),
+	Vector3.new(-54.773,61.335,4601.840),
+	Vector3.new(-52.728,60.069,5405.474),
+	Vector3.new(-40.939,46.907,6142.399),
+	Vector3.new(-45.882,58.552,6887.951),
+	Vector3.new(-57.181,82.807,7735.153),
 }
-local FINAL_POS = Vector3.new(-53.71711730957031, -358.8614501953125, 9489.908203125)
+local FINAL_POS = Vector3.new(-53.717,-358.861,9489.908)
 
 -- ========= Platform =========
 local currentPlatform
 local function spawnPlatformBelow(hrp)
-	if currentPlatform and currentPlatform.Parent then
-		currentPlatform:Destroy()
-	end
+	if currentPlatform and currentPlatform.Parent then currentPlatform:Destroy() end
 	local p = Instance.new("Part")
 	p.Size = Vector3.new(20,1,20)
 	p.Anchored = true
@@ -76,13 +64,13 @@ local function spawnPlatformBelow(hrp)
 	p.Position = hrp.Position - Vector3.new(0,3,0)
 	p.Parent = workspace
 	currentPlatform = p
-	Debris:AddItem(p, 5)
+	Debris:AddItem(p,5)
 end
 
 -- ========= Teleport =========
 local function doTeleport(pos)
 	if not hrp then return end
-	hrp.CFrame = CFrame.new(pos + Vector3.new(0,5,0))
+	hrp.CFrame = CFrame.new(pos+Vector3.new(0,5,0))
 	spawnPlatformBelow(hrp)
 end
 
@@ -90,9 +78,9 @@ end
 local function shuffled(tbl)
 	local copy = {}
 	for i,v in ipairs(tbl) do copy[i] = v end
-	for i = #copy, 2, -1 do
-		local j = math.random(i)
-		copy[i], copy[j] = copy[j], copy[i]
+	for i=#copy,2,-1 do
+		local j=math.random(i)
+		copy[i],copy[j]=copy[j],copy[i]
 	end
 	return copy
 end
@@ -101,176 +89,153 @@ end
 local function sendWebhook()
 	if not requestfunc then return end
 	local goldVal = (LP:FindFirstChild("Data") and LP.Data:FindFirstChild("Gold")) and LP.Data.Gold.Value or "N/A"
-
 	local body = {
 		["content"] = "",
 		["embeds"] = {{
-			["title"] = "Chest Reached!",
-			["type"] = "rich",
-			["color"] = tonumber(0x00ffcc),
-			["fields"] = {
-				{["name"] = "🤔 Player", ["value"] = LP.Name, ["inline"] = true},
-				{["name"] = "💰 Gold", ["value"] = tostring(goldVal), ["inline"] = true}
+			["title"]="Chest Reached!",
+			["color"]=tonumber(0x00ffcc),
+			["fields"]={
+				{["name"]="🤔 Player",["value"]=LP.Name,["inline"]=true},
+				{["name"]="💰 Gold",["value"]=tostring(goldVal),["inline"]=true}
 			},
-			["thumbnail"] = {["url"] = LOGO_URL},
-			["footer"] = {["text"] = "GladHub - .gg/DYBKhmKf6S"},
-			["timestamp"] = DateTime.now():ToIsoDate()
+			["thumbnail"]={["url"]=LOGO_URL},
+			["footer"]={["text"]="GladHub - .gg/DYBKhmKf6S"},
+			["timestamp"]=DateTime.now():ToIsoDate()
 		}}
 	}
-
 	requestfunc({
-		Url = WEBHOOK_URL,
-		Method = "POST",
-		Headers = {["Content-Type"] = "application/json"},
-		Body = HttpService:JSONEncode(body)
+		Url=WEBHOOK_URL,
+		Method="POST",
+		Headers={["Content-Type"]="application/json"},
+		Body=HttpService:JSONEncode(body)
 	})
 end
 
 -- ========= UI =========
-local gui = Instance.new("ScreenGui")
-gui.Name = "AutoTPUI"
-gui.ResetOnSpawn = false
-gui.Parent = LP:WaitForChild("PlayerGui")
+local gui=Instance.new("ScreenGui",LP:WaitForChild("PlayerGui"))
+gui.Name="AutoTPUI"
+gui.ResetOnSpawn=false
 
-local main = Instance.new("Frame")
-main.Size = UDim2.fromOffset(360, 320) -- ขยายให้ใหญ่พอ
-main.Position = UDim2.new(0.5, -180, 0.5, -140)
-main.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-main.Parent = gui
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+local main=Instance.new("Frame",gui)
+main.Size=UDim2.fromOffset(360,320)
+main.Position=UDim2.new(0.5,-180,0.5,-160)
+main.BackgroundColor3=Color3.fromRGB(40,45,60)
+main.Active=true main.Draggable=true
+Instance.new("UICorner",main).CornerRadius=UDim.new(0,12)
 
-local title = Instance.new("TextLabel")
-title.Parent = main
-title.Size = UDim2.new(1,-30,0,28)
-title.Position = UDim2.fromOffset(10,0)
-title.BackgroundTransparency = 1
-title.Text = "AUTO TELEPORT + AUTO JUMP + ANTI AFK"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.TextColor3 = Color3.fromRGB(230,230,250)
-title.TextXAlignment = Enum.TextXAlignment.Left
+local title=Instance.new("TextLabel",main)
+title.Size=UDim2.new(1,-30,0,28)
+title.Position=UDim2.fromOffset(10,0)
+title.BackgroundTransparency=1
+title.Text="AUTO TELEPORT + ANTI AFK (AutoJump+NoClip Always ON)"
+title.Font=Enum.Font.GothamBold
+title.TextSize=13
+title.TextColor3=Color3.fromRGB(230,230,250)
+title.TextXAlignment=Enum.TextXAlignment.Left
 
-local closeBtn = Instance.new("TextButton")
-closeBtn.Parent = main
-closeBtn.Size = UDim2.fromOffset(24,24)
-closeBtn.Position = UDim2.new(1,-28,0,2)
-closeBtn.Text = "×"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
-closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-closeBtn.BackgroundColor3 = Color3.fromRGB(90,95,120)
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,6)
+local closeBtn=Instance.new("TextButton",main)
+closeBtn.Size=UDim2.fromOffset(24,24)
+closeBtn.Position=UDim2.new(1,-28,0,2)
+closeBtn.Text="×"
+closeBtn.Font=Enum.Font.GothamBold
+closeBtn.TextSize=18
+closeBtn.TextColor3=Color3.fromRGB(255,255,255)
+closeBtn.BackgroundColor3=Color3.fromRGB(90,95,120)
+Instance.new("UICorner",closeBtn).CornerRadius=UDim.new(0,6)
 closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
 
--- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Parent = main
-statusLabel.Size = UDim2.new(1,-20,0,20)
-statusLabel.Position = UDim2.fromOffset(10,30)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status : Idle"
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 12
-statusLabel.TextColor3 = Color3.fromRGB(200,210,240)
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+local statusLabel=Instance.new("TextLabel",main)
+statusLabel.Size=UDim2.new(1,-20,0,20)
+statusLabel.Position=UDim2.fromOffset(10,30)
+statusLabel.BackgroundTransparency=1
+statusLabel.Text="Status : Idle"
+statusLabel.Font=Enum.Font.Gotham
+statusLabel.TextSize=12
+statusLabel.TextColor3=Color3.fromRGB(200,210,240)
+statusLabel.TextXAlignment=Enum.TextXAlignment.Left
 
 -- Toggle Buttons
-local function makeToggle(name, offsetY)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1,-20,0,36)
-	btn.Position = UDim2.fromOffset(10, offsetY)
-	btn.BackgroundColor3 = Color3.fromRGB(90, 100, 120)
-	btn.TextColor3 = Color3.fromRGB(240,240,255)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
-	btn.Text = name.." : OFF"
-	btn.Parent = main
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+local function makeToggle(name,offsetY)
+	local btn=Instance.new("TextButton",main)
+	btn.Size=UDim2.new(1,-20,0,36)
+	btn.Position=UDim2.fromOffset(10,offsetY)
+	btn.BackgroundColor3=Color3.fromRGB(90,100,120)
+	btn.TextColor3=Color3.fromRGB(240,240,255)
+	btn.Font=Enum.Font.GothamBold
+	btn.TextSize=14
+	btn.Text=name.." : OFF"
+	Instance.new("UICorner",btn).CornerRadius=UDim.new(0,8)
 	return btn
 end
-local tpBtn = makeToggle("AUTO TP",60)
-local jumpBtn = makeToggle("AUTO JUMP",105)
-local afkBtn = makeToggle("ANTI AFK",150) -- อยู่ถัดลงมาเห็นชัดเจน
+local tpBtn=makeToggle("AUTO TP",60)
+local afkBtn=makeToggle("ANTI AFK",105)
 
 -- Slider
-local sliderFrame = Instance.new("Frame")
-sliderFrame.Size = UDim2.new(1,-20,0,40)
-sliderFrame.Position = UDim2.fromOffset(10, 245)
-sliderFrame.BackgroundTransparency = 1
-sliderFrame.Parent = main
+local sliderFrame=Instance.new("Frame",main)
+sliderFrame.Size=UDim2.new(1,-20,0,40)
+sliderFrame.Position=UDim2.fromOffset(10,155)
+sliderFrame.BackgroundTransparency=1
 
-local sliderLabel = Instance.new("TextLabel")
-sliderLabel.Parent = sliderFrame
-sliderLabel.Size = UDim2.new(1,0,0,18)
-sliderLabel.BackgroundTransparency = 1
-sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-sliderLabel.Font = Enum.Font.Gotham
-sliderLabel.TextSize = 12
-sliderLabel.TextColor3 = Color3.fromRGB(220,220,240)
-sliderLabel.Text = "TP Delay: 3.0s"
+local sliderLabel=Instance.new("TextLabel",sliderFrame)
+sliderLabel.Size=UDim2.new(1,0,0,18)
+sliderLabel.BackgroundTransparency=1
+sliderLabel.TextXAlignment=Enum.TextXAlignment.Left
+sliderLabel.Font=Enum.Font.Gotham
+sliderLabel.TextSize=12
+sliderLabel.TextColor3=Color3.fromRGB(220,220,240)
+sliderLabel.Text="TP Delay: 2.5s"
 
-local sliderBack = Instance.new("Frame")
-sliderBack.Parent = sliderFrame
-sliderBack.Size = UDim2.new(1,0,0,8)
-sliderBack.Position = UDim2.fromOffset(0,22)
-sliderBack.BackgroundColor3 = Color3.fromRGB(90,95,120)
-Instance.new("UICorner", sliderBack).CornerRadius = UDim.new(1,0)
+local sliderBack=Instance.new("Frame",sliderFrame)
+sliderBack.Size=UDim2.new(1,0,0,8)
+sliderBack.Position=UDim2.fromOffset(0,22)
+sliderBack.BackgroundColor3=Color3.fromRGB(90,95,120)
+Instance.new("UICorner",sliderBack).CornerRadius=UDim.new(1,0)
 
-local sliderFill = Instance.new("Frame")
-sliderFill.Parent = sliderBack
-sliderFill.Size = UDim2.new(0,0,1,0)
-sliderFill.BackgroundColor3 = Color3.fromRGB(100,160,255)
-Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1,0)
+local sliderFill=Instance.new("Frame",sliderBack)
+sliderFill.Size=UDim2.new(0,0,1,0)
+sliderFill.BackgroundColor3=Color3.fromRGB(100,160,255)
+Instance.new("UICorner",sliderFill).CornerRadius=UDim.new(1,0)
 
-local sliderKnob = Instance.new("Frame")
-sliderKnob.Parent = sliderBack
-sliderKnob.Size = UDim2.fromOffset(14,14)
-sliderKnob.Position = UDim2.fromOffset(0,-3)
-sliderKnob.BackgroundColor3 = Color3.fromRGB(230,235,255)
-Instance.new("UICorner", sliderKnob).CornerRadius = UDim.new(1,0)
+local sliderKnob=Instance.new("Frame",sliderBack)
+sliderKnob.Size=UDim2.fromOffset(14,14)
+sliderKnob.Position=UDim2.fromOffset(0,-3)
+sliderKnob.BackgroundColor3=Color3.fromRGB(230,235,255)
+Instance.new("UICorner",sliderKnob).CornerRadius=UDim.new(1,0)
 
--- ========= Toggles =========
-local autoTP, autoJump, antiAFK = false, false, false
+-- ========= Toggles State =========
+local autoTP,antiAFK=false,false
 tpBtn.MouseButton1Click:Connect(function()
-	autoTP = not autoTP
-	tpBtn.Text = "AUTO TP : "..(autoTP and "ON" or "OFF")
-	tpBtn.BackgroundColor3 = autoTP and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,100,120)
-	statusLabel.Text = autoTP and "Status : Waiting in zone" or "Status : Idle"
-end)
-jumpBtn.MouseButton1Click:Connect(function()
-	autoJump = not autoJump
-	jumpBtn.Text = "AUTO JUMP : "..(autoJump and "ON" or "OFF")
-	jumpBtn.BackgroundColor3 = autoJump and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,100,120)
+	autoTP=not autoTP
+	tpBtn.Text="AUTO TP : "..(autoTP and "ON" or "OFF")
+	tpBtn.BackgroundColor3=autoTP and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,100,120)
+	statusLabel.Text=autoTP and "Status : Waiting in zone" or "Status : Idle"
 end)
 afkBtn.MouseButton1Click:Connect(function()
-	antiAFK = not antiAFK
-	afkBtn.Text = "ANTI AFK : "..(antiAFK and "ON" or "OFF")
-	afkBtn.BackgroundColor3 = antiAFK and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,100,120)
+	antiAFK=not antiAFK
+	afkBtn.Text="ANTI AFK : "..(antiAFK and "ON" or "OFF")
+	afkBtn.BackgroundColor3=antiAFK and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,100,120)
 end)
 
 -- ========= Slider Logic =========
-local MIN,MAX = 0.1,3.5
-local tpDelay = 2.6
-local dragging = false
+local MIN,MAX=0.1,3.5
+local tpDelay=2.5
+local dragging=false
 local function applySlider(val)
-	tpDelay = math.clamp(val,MIN,MAX)
-	sliderLabel.Text = ("TP Delay: %.2fs"):format(tpDelay)
-	local alpha = (tpDelay-MIN)/(MAX-MIN)
-	sliderFill.Size = UDim2.new(alpha,0,1,0)
-	sliderKnob.Position = UDim2.new(alpha,-7,0,-3)
+	tpDelay=math.clamp(val,MIN,MAX)
+	sliderLabel.Text=("TP Delay: %.2fs"):format(tpDelay)
+	local alpha=(tpDelay-MIN)/(MAX-MIN)
+	sliderFill.Size=UDim2.new(alpha,0,1,0)
+	sliderKnob.Position=UDim2.new(alpha,-7,0,-3)
 end
 applySlider(tpDelay)
 local function pxToValue(px)
-	local abs = sliderBack.AbsoluteSize.X
-	local alpha = math.clamp(px/abs,0,1)
+	local abs=sliderBack.AbsoluteSize.X
+	local alpha=math.clamp(px/abs,0,1)
 	return MIN+(MAX-MIN)*alpha
 end
 local function updateFromMouse()
-	local mouse = UserInputService:GetMouseLocation()
-	local left = sliderBack.AbsolutePosition.X
+	local mouse=UserInputService:GetMouseLocation()
+	local left=sliderBack.AbsolutePosition.X
 	applySlider(pxToValue(mouse.X-left))
 end
 sliderBack.InputBegan:Connect(function(i)
@@ -290,43 +255,43 @@ UserInputService.InputChanged:Connect(function(i)
 end)
 
 -- ========= Logic =========
-local isRunning = false
+local isRunning=false
 local function runSequence()
 	if isRunning or not autoTP then return end
-	isRunning = true
+	isRunning=true
 	sendWebhook()
 	task.spawn(function()
-		statusLabel.Text = "Status : Running..."
-		local order = shuffled(TP_Positions)
+		statusLabel.Text="Status : Running..."
+		local order=shuffled(TP_Positions)
 		for idx,pos in ipairs(order) do
 			if not autoTP then break end
-			statusLabel.Text = ("Status : Teleporting (%d/10)"):format(idx)
+			statusLabel.Text=("Status : Teleporting (%d/10)"):format(idx)
 			doTeleport(pos)
 			task.wait(tpDelay)
 		end
 		if autoTP then
-			statusLabel.Text = "Status : Final TP"
+			statusLabel.Text="Status : Final TP"
 			doTeleport(FINAL_POS)
 		end
-		isRunning = false
-		statusLabel.Text = autoTP and "Status : Waiting in zone" or "Status : Idle"
+		isRunning=false
+		statusLabel.Text=autoTP and "Status : Waiting in zone" or "Status : Idle"
 	end)
 end
 
--- ========= Zone + AntiAFK =========
+-- ========= Main Loop =========
 task.spawn(function()
-	while task.wait(1) do
-		-- Zone detect
-		if autoTP and hrp then
-			local pos = hrp.Position
-			if pos.X >= -1000 and pos.X <= 1000 and pos.Z >= -1000 and pos.Z <= 1000 then
-				if not isRunning then runSequence() end
-			end
+	while task.wait(0.25) do
+		-- Auto Jump Always
+		if hum and hum.FloorMaterial~=Enum.Material.Air then
+			hum:ChangeState(Enum.HumanoidStateType.Jumping)
 		end
-		-- Auto Jump
-		if autoJump and hum then
-			if hum.FloorMaterial ~= Enum.Material.Air then
-				hum:ChangeState(Enum.HumanoidStateType.Jumping)
+		-- NoClip Always
+		if LP.Character then noClipChar(LP.Character) end
+		-- TP
+		if autoTP and hrp then
+			local pos=hrp.Position
+			if pos.X>=-1000 and pos.X<=1000 and pos.Z>=-1000 and pos.Z<=1000 then
+				if not isRunning then runSequence() end
 			end
 		end
 		-- Anti AFK
