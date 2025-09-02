@@ -133,7 +133,7 @@ gui.ResetOnSpawn = false
 gui.Parent = LP:WaitForChild("PlayerGui")
 
 local main = Instance.new("Frame")
-main.Size = UDim2.fromOffset(360, 280)
+main.Size = UDim2.fromOffset(360, 320) -- ขยายให้ใหญ่พอ
 main.Position = UDim2.new(0.5, -180, 0.5, -140)
 main.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
 main.BorderSizePixel = 0
@@ -193,12 +193,12 @@ local function makeToggle(name, offsetY)
 end
 local tpBtn = makeToggle("AUTO TP",60)
 local jumpBtn = makeToggle("AUTO JUMP",105)
-local afkBtn = makeToggle("ANTI AFK",150)
+local afkBtn = makeToggle("ANTI AFK",150) -- อยู่ถัดลงมาเห็นชัดเจน
 
 -- Slider
 local sliderFrame = Instance.new("Frame")
 sliderFrame.Size = UDim2.new(1,-20,0,40)
-sliderFrame.Position = UDim2.fromOffset(10, 200)
+sliderFrame.Position = UDim2.fromOffset(10, 245)
 sliderFrame.BackgroundTransparency = 1
 sliderFrame.Parent = main
 
