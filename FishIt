@@ -29,15 +29,15 @@ local RFSellAllItems     = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.
 local running = true
 
 -- Fishing state
-local autoFish = false
-local loopDelay = 1.0         -- Slider (0.1–3.5)
-local interFireDelay = 0.25    -- TextBox #1
-local catchWait = 1.5          -- TextBox #2
+local autoFish = false          -- OFF by default
+local loopDelay = 0.10
+local interFireDelay = 0.25
+local catchWait = 2.00
 local sessionFish = 0
 
 -- Selling state
-local autoSell = false
-local sellDelay = 10.0         -- TextBox #3 (ดีเลย์ก่อนขายแต่ละครั้ง)
+local autoSell = false          -- OFF by default
+local sellDelay = 1.00
 local sessionSell = 0
 
 --// Session helpers
