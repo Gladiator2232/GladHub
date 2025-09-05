@@ -1,0 +1,406 @@
+--Glad Huv v2 Free Script open source
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote (welcome toast)
+local RETextNotification = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/TextNotification"] -- RemoteEvent 
+firesignal(RETextNotification.OnClientEvent, {
+    Text = "Welcome to <font color=\"rgb(15, 150, 255)\">Glad Hub V2</font>",
+    Type = "Text"
+})
+
+--// Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Stats = game:GetService("Stats")
+
+local LP = Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
+
+--// Remotes (fishing)
+local RFChargeFishingRod = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/ChargeFishingRod"]
+local RFStartFishing     = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/RequestFishingMinigameStarted"]
+local REFishingCompleted = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/FishingCompleted"]
+
+--// Remote (sell)
+local RFSellAllItems     = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RF/SellAllItems"]
+
+--// State
+local running = true
+
+-- Fishing state
+local autoFish = false
+local loopDelay = 1.0         -- Slider (0.1–3.5)
+local interFireDelay = 0.25    -- TextBox #1
+local catchWait = 1.5          -- TextBox #2
+local sessionFish = 0
+
+-- Selling state
+local autoSell = false
+local sellDelay = 10.0         -- TextBox #3 (ดีเลย์ก่อนขายแต่ละครั้ง)
+local sessionSell = 0
+
+--// Session helpers
+local function bumpFishSession() sessionFish += 1; return sessionFish end
+local function bumpSellSession() sessionSell += 1; return sessionSell end
+local function isActiveFish(my) return running and autoFish and sessionFish == my end
+local function isActiveSell(my) return running and autoSell and sessionSell == my end
+
+--// Helpers
+local function clamp(v, a, b) return math.max(a, math.min(b, v)) end
+local function rnd(a, b) return a + math.random() * (b - a) end
+local function safeTonumber(s) return tonumber(s) end
+local function getPing()
+    local ok, val = pcall(function()
+        local item = Stats.Network.ServerStatsItem and Stats.Network.ServerStatsItem["Data Ping"]
+        return item and item:GetValue() or 0
+    end)
+    return ok and math.floor(val or 0) or 0
+end
+
+-- interruptible waits
+local function interruptibleWaitFish(sec, my)
+    local t0 = os.clock()
+    while os.clock() - t0 < (sec or 0) do
+        if not isActiveFish(my) then return false end
+        task.wait(0.05)
+    end
+    return isActiveFish(my)
+end
+local function interruptibleWaitSell(sec, my)
+    local t0 = os.clock()
+    while os.clock() - t0 < (sec or 0) do
+        if not isActiveSell(my) then return false end
+        task.wait(0.05)
+    end
+    return isActiveSell(my)
+end
+
+--// UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoFishUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+ScreenGui.Parent = PlayerGui
+
+-- Main
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.fromOffset(320, 300)
+Frame.Position = UDim2.new(0.5, -160, 0.32, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 14)
+local Stroke = Instance.new("UIStroke", Frame) Stroke.Color = Color3.fromRGB(60, 70, 100) Stroke.Thickness = 1.4
+local Padding = Instance.new("UIPadding", Frame) Padding.PaddingLeft = UDim.new(0, 12) Padding.PaddingRight = UDim.new(0, 12) Padding.PaddingTop = UDim.new(0, 8)
+
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, -8, 0, 34)
+TitleBar.Position = UDim2.new(0, 4, 0, 4)
+TitleBar.BackgroundTransparency = 1
+TitleBar.Parent = Frame
+
+local Title = Instance.new("TextLabel")
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, -36, 1, 0)
+Title.Position = UDim2.new(0, 4, 0, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "🎣 Auto Fishing | GladHubV2"
+Title.TextColor3 = Color3.fromRGB(205, 210, 255)
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TitleBar
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(28, 28)
+Close.Position = UDim2.new(1, -30, 0.5, -14)
+Close.BackgroundTransparency = 1
+Close.Text = "✕"
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 16
+Close.TextColor3 = Color3.fromRGB(255, 90, 90)
+Close.Parent = TitleBar
+Close.MouseButton1Click:Connect(function()
+    running = false
+    bumpFishSession()
+    bumpSellSession()
+    ScreenGui:Destroy()
+end)
+
+-- Manual drag (เฉพาะหัวบาร์)
+do
+    local dragging, dragStart, startPos = false, nil, nil
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = Frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- Toggle (Auto Fish)
+local ToggleFish = Instance.new("TextButton")
+ToggleFish.Size = UDim2.new(1, -16, 0, 36)
+ToggleFish.Position = UDim2.new(0, 8, 0, 46)
+ToggleFish.BackgroundColor3 = Color3.fromRGB(46, 52, 70)
+ToggleFish.Text = "Auto Fish: OFF"
+ToggleFish.Font = Enum.Font.GothamBold
+ToggleFish.TextSize = 16
+ToggleFish.TextColor3 = Color3.fromRGB(210, 215, 255)
+ToggleFish.Parent = Frame
+Instance.new("UICorner", ToggleFish).CornerRadius = UDim.new(0, 10)
+local ToggleFishStroke = Instance.new("UIStroke", ToggleFish) ToggleFishStroke.Color = Color3.fromRGB(70, 85, 130) ToggleFishStroke.Thickness = 1
+ToggleFish.MouseButton1Click:Connect(function()
+    autoFish = not autoFish
+    bumpFishSession()
+    ToggleFish.Text = autoFish and "Auto Fish: ON" or "Auto Fish: OFF"
+    ToggleFish.BackgroundColor3 = autoFish and Color3.fromRGB(60, 110, 80) or Color3.fromRGB(46, 52, 70)
+end)
+
+-- Toggle (Auto Sell)
+local ToggleSell = Instance.new("TextButton")
+ToggleSell.Size = UDim2.new(1, -16, 0, 36)
+ToggleSell.Position = UDim2.new(0, 8, 0, 86)
+ToggleSell.BackgroundColor3 = Color3.fromRGB(46, 52, 70)
+ToggleSell.Text = "Auto Sell: OFF"
+ToggleSell.Font = Enum.Font.GothamBold
+ToggleSell.TextSize = 16
+ToggleSell.TextColor3 = Color3.fromRGB(210, 215, 255)
+ToggleSell.Parent = Frame
+Instance.new("UICorner", ToggleSell).CornerRadius = UDim.new(0, 10)
+local ToggleSellStroke = Instance.new("UIStroke", ToggleSell) ToggleSellStroke.Color = Color3.fromRGB(70, 85, 130) ToggleSellStroke.Thickness = 1
+ToggleSell.MouseButton1Click:Connect(function()
+    autoSell = not autoSell
+    bumpSellSession()
+    ToggleSell.Text = autoSell and "Auto Sell: ON" or "Auto Sell: OFF"
+    ToggleSell.BackgroundColor3 = autoSell and Color3.fromRGB(110, 80, 60) or Color3.fromRGB(46, 52, 70)
+end)
+
+-- Slider (Loop Delay 0.1–3.5s) — สำหรับ Fishing
+local SliderFrame = Instance.new("Frame")
+SliderFrame.Size = UDim2.new(1, -16, 0, 42)
+SliderFrame.Position = UDim2.new(0, 8, 0, 132)
+SliderFrame.BackgroundTransparency = 1
+SliderFrame.Parent = Frame
+
+local SliderLabel = Instance.new("TextLabel")
+SliderLabel.BackgroundTransparency = 1
+SliderLabel.Size = UDim2.new(1, 0, 0, 18)
+SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.Font = Enum.Font.Gotham
+SliderLabel.TextSize = 14
+SliderLabel.TextColor3 = Color3.fromRGB(185, 190, 210)
+SliderLabel.Text = string.format("Loop Delay: %.2fs", loopDelay)
+SliderLabel.Parent = SliderFrame
+
+local SliderBar = Instance.new("Frame")
+SliderBar.Size = UDim2.new(1, 0, 0, 6)
+SliderBar.Position = UDim2.new(0, 0, 1, -10)
+SliderBar.BackgroundColor3 = Color3.fromRGB(70, 78, 104)
+SliderBar.Parent = SliderFrame
+Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(0, 3)
+
+local Knob = Instance.new("Frame")
+Knob.Size = UDim2.fromOffset(16, 16)
+Knob.Position = UDim2.new((loopDelay - 0.1) / 3.4, -8, 0.5, -8)
+Knob.BackgroundColor3 = Color3.fromRGB(150, 160, 255)
+Knob.Parent = SliderBar
+Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+local KnobStroke = Instance.new("UIStroke", Knob) KnobStroke.Thickness = 1 KnobStroke.Color = Color3.fromRGB(220, 220, 255)
+
+do
+    local dragging = false
+    Knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+    end)
+    Knob.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local rel = clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+            Knob.Position = UDim2.new(rel, -8, 0.5, -8)
+            loopDelay = 0.1 + (3.4 * rel)
+            SliderLabel.Text = string.format("Loop Delay: %.2fs", loopDelay)
+        end
+    end)
+end
+
+-- TextBoxes (แถว 1: Inter-Fire / Catch Wait)
+local InputsFrame = Instance.new("Frame")
+InputsFrame.Size = UDim2.new(1, -16, 0, 56)
+InputsFrame.Position = UDim2.new(0, 8, 0, 178)
+InputsFrame.BackgroundTransparency = 1
+InputsFrame.Parent = Frame
+
+local function makeLabeledBox(parent, title, defaultText, xOffset)
+    local lbl = Instance.new("TextLabel")
+    lbl.BackgroundTransparency = 1
+    lbl.Size = UDim2.new(0, 150, 0, 18)
+    lbl.Position = UDim2.new(0, xOffset, 0, 0)
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextColor3 = Color3.fromRGB(185, 190, 210)
+    lbl.Text = title
+    lbl.Parent = parent
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0, 120, 0, 28)
+    box.Position = UDim2.new(0, xOffset, 0, 22)
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 14
+    box.TextColor3 = Color3.fromRGB(220, 225, 255)
+    box.PlaceholderText = defaultText
+    box.Text = defaultText
+    box.BackgroundColor3 = Color3.fromRGB(40, 45, 65)
+    box.ClearTextOnFocus = false
+    box.Parent = parent
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
+    local s = Instance.new("UIStroke", box) s.Color = Color3.fromRGB(70, 85, 130) s.Thickness = 1
+    return lbl, box
+end
+
+local _, BoxInter = makeLabeledBox(InputsFrame, "Inter-Fire Delay (s)", string.format("%.2f", interFireDelay), 0)
+local _, BoxCatch = makeLabeledBox(InputsFrame, "Catch Wait (s)", string.format("%.2f", catchWait), 160)
+
+BoxInter.FocusLost:Connect(function()
+    local v = safeTonumber(BoxInter.Text)
+    if v then interFireDelay = clamp(v, 0, 5) BoxInter.Text = string.format("%.2f", interFireDelay) end
+end)
+BoxCatch.FocusLost:Connect(function()
+    local v = safeTonumber(BoxCatch.Text)
+    if v then catchWait = clamp(v, 0.05, 6) BoxCatch.Text = string.format("%.2f", catchWait) end
+end)
+
+-- TextBox (แถว 2: Sell Delay)
+local InputsSell = Instance.new("Frame")
+InputsSell.Size = UDim2.new(1, -16, 0, 40)
+InputsSell.Position = UDim2.new(0, 8, 0, 238)
+InputsSell.BackgroundTransparency = 1
+InputsSell.Parent = Frame
+
+local _, BoxSellDelay = makeLabeledBox(InputsSell, "Sell Delay (s)", string.format("%.2f", sellDelay), 0)
+BoxSellDelay.FocusLost:Connect(function()
+    local v = safeTonumber(BoxSellDelay.Text)
+    if v then sellDelay = clamp(v, 0, 600) BoxSellDelay.Text = string.format("%.2f", sellDelay) end
+end)
+
+-- Status + Stats (ยึดด้านล่าง)
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Size = UDim2.new(1, -16, 0, 18)
+StatusLabel.Position = UDim2.new(0, 8, 1, -54)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 14
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.TextColor3 = Color3.fromRGB(190, 195, 215)
+StatusLabel.Text = "Status: Idle"
+StatusLabel.Parent = Frame
+
+local StatLabel = Instance.new("TextLabel")
+StatLabel.BackgroundTransparency = 1
+StatLabel.Size = UDim2.new(1, -16, 0, 18)
+StatLabel.Position = UDim2.new(0, 8, 1, -30)
+StatLabel.Font = Enum.Font.Gotham
+StatLabel.TextSize = 14
+StatLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatLabel.TextColor3 = Color3.fromRGB(150, 160, 180)
+StatLabel.Text = "FPS: 0 | Ping: 0ms"
+StatLabel.Parent = Frame
+
+do
+    local last = os.clock()
+    RunService.RenderStepped:Connect(function()
+        local now = os.clock()
+        local fps = 1 / math.max(1e-6, (now - last))
+        last = now
+        StatLabel.Text = string.format("FPS: %d | Ping: %dms", math.floor(fps + 0.5), getPing())
+    end)
+end
+
+--// Core fishing loop (หยุดได้ทันที)
+task.spawn(function()
+    while running do
+        if autoFish then
+            local my = sessionFish
+            for i = 1, 4 do
+                if not isActiveFish(my) then break end
+                -- CHARGE
+                StatusLabel.Text = string.format("Status: Charging (%d/4)", i)
+                pcall(function()
+                    RFChargeFishingRod:InvokeServer(workspace:GetServerTimeNow())
+                end)
+                if not isActiveFish(my) then break end
+                if interFireDelay > 0 and not interruptibleWaitFish(interFireDelay, my) then break end
+
+                -- CAST
+                if not isActiveFish(my) then break end
+                StatusLabel.Text = string.format("Status: Casting (%d/4)", i)
+                pcall(function()
+                    RFStartFishing:InvokeServer(rnd(-1.4, 1.4), rnd(0.85, 1.0))
+                end)
+                if not isActiveFish(my) then break end
+
+                -- WAIT for fish bite
+                StatusLabel.Text = string.format("Status: Waiting fish (%.2fs)", catchWait)
+                if not interruptibleWaitFish(catchWait, my) then break end
+
+                -- COMPLETE
+                if not isActiveFish(my) then break end
+                StatusLabel.Text = string.format("Status: Completing (%d/4)", i)
+                pcall(function()
+                    REFishingCompleted:FireServer()
+                end)
+
+                -- gap ระหว่างรอบย่อย
+                if i < 4 and interFireDelay > 0 and not interruptibleWaitFish(interFireDelay, my) then break end
+            end
+
+            -- Loop cooldown
+            if isActiveFish(my) then
+                StatusLabel.Text = string.format("Status: Loop cooldown (%.2fs)", loopDelay)
+                interruptibleWaitFish(loopDelay, my)
+            end
+        else
+            -- อย่าแย่งข้อความจาก Auto Sell ถ้ามันกำลังพิมพ์; โหมด Idle ก็พิมพ์ทับช้าๆ พอ
+            if StatusLabel.Text:sub(1, 5) ~= "Sell:" then
+                StatusLabel.Text = "Status: Idle"
+            end
+            task.wait(0.1)
+        end
+    end
+end)
+
+--// Auto Sell loop (แยก session, หยุดได้ทันที)
+task.spawn(function()
+    while running do
+        if autoSell then
+            local my = sessionSell
+            -- รอครบ sellDelay แล้วค่อยขาย (ยกเลิกได้)
+            StatusLabel.Text = string.format("Sell: waiting %.2fs", sellDelay)
+            if interruptibleWaitSell(sellDelay, my) and isActiveSell(my) then
+                StatusLabel.Text = "Sell: invoking..."
+                pcall(function()
+                    RFSellAllItems:InvokeServer()
+                end)
+                -- หลังขายเสร็จ โชว์สั้นๆ แล้ววนใหม่
+                if isActiveSell(my) then
+                    StatusLabel.Text = "Sell: done"
+                    interruptibleWaitSell(0.15, my)
+                end
+            end
+        else
+            task.wait(0.2)
+        end
+    end
+end)
