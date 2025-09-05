@@ -13,6 +13,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Stats = game:GetService("Stats")
+local VirtualUser = game:GetService("VirtualUser") -- Anti-AFK
 
 local LP = Players.LocalPlayer
 local PlayerGui = LP:WaitForChild("PlayerGui")
@@ -40,11 +41,18 @@ local autoSell = false          -- OFF by default
 local sellDelay = 1.00
 local sessionSell = 0
 
+-- Anti-AFK state
+local antiAFK = false           -- OFF by default
+local afkInterval = 60          -- จะจิ้มเมาส์/ปลุกทุก ๆ N วินาที
+local sessionAFK = 0
+
 --// Session helpers
 local function bumpFishSession() sessionFish += 1; return sessionFish end
 local function bumpSellSession() sessionSell += 1; return sessionSell end
+local function bumpAFKSession()  sessionAFK  += 1; return sessionAFK  end
 local function isActiveFish(my) return running and autoFish and sessionFish == my end
 local function isActiveSell(my) return running and autoSell and sessionSell == my end
+local function isActiveAFK(my)  return running and antiAFK  and sessionAFK  == my end
 
 --// Helpers
 local function clamp(v, a, b) return math.max(a, math.min(b, v)) end
@@ -75,6 +83,14 @@ local function interruptibleWaitSell(sec, my)
     end
     return isActiveSell(my)
 end
+local function interruptibleWaitAFK(sec, my)
+    local t0 = os.clock()
+    while os.clock() - t0 < (sec or 0) do
+        if not isActiveAFK(my) then return false end
+        task.wait(0.05)
+    end
+    return isActiveAFK(my)
+end
 
 --// UI
 local ScreenGui = Instance.new("ScreenGui")
@@ -85,7 +101,7 @@ ScreenGui.Parent = PlayerGui
 
 -- Main
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.fromOffset(320, 300)
+Frame.Size = UDim2.fromOffset(320, 340) -- ขยายให้พอดีกับปุ่ม Anti-AFK
 Frame.Position = UDim2.new(0.5, -160, 0.32, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 Frame.BorderSizePixel = 0
@@ -125,6 +141,7 @@ Close.MouseButton1Click:Connect(function()
     running = false
     bumpFishSession()
     bumpSellSession()
+    bumpAFKSession()
     ScreenGui:Destroy()
 end)
 
@@ -185,10 +202,29 @@ ToggleSell.MouseButton1Click:Connect(function()
     ToggleSell.BackgroundColor3 = autoSell and Color3.fromRGB(110, 80, 60) or Color3.fromRGB(46, 52, 70)
 end)
 
--- Slider (Loop Delay 0.1–3.5s) — สำหรับ Fishing
+-- Toggle (Anti-AFK)
+local ToggleAFK = Instance.new("TextButton")
+ToggleAFK.Size = UDim2.new(1, -16, 0, 36)
+ToggleAFK.Position = UDim2.new(0, 8, 0, 126)
+ToggleAFK.BackgroundColor3 = Color3.fromRGB(46, 52, 70)
+ToggleAFK.Text = "Anti AFK: OFF"
+ToggleAFK.Font = Enum.Font.GothamBold
+ToggleAFK.TextSize = 16
+ToggleAFK.TextColor3 = Color3.fromRGB(210, 215, 255)
+ToggleAFK.Parent = Frame
+Instance.new("UICorner", ToggleAFK).CornerRadius = UDim.new(0, 10)
+local ToggleAFKStroke = Instance.new("UIStroke", ToggleAFK) ToggleAFKStroke.Color = Color3.fromRGB(70, 85, 130) ToggleAFKStroke.Thickness = 1
+ToggleAFK.MouseButton1Click:Connect(function()
+    antiAFK = not antiAFK
+    bumpAFKSession()
+    ToggleAFK.Text = antiAFK and "Anti AFK: ON" or "Anti AFK: OFF"
+    ToggleAFK.BackgroundColor3 = antiAFK and Color3.fromRGB(80, 80, 120) or Color3.fromRGB(46, 52, 70)
+end)
+
+-- Slider (Loop Delay 0.1–3.5s) — สำหรับ Fishing (เลื่อนลง)
 local SliderFrame = Instance.new("Frame")
 SliderFrame.Size = UDim2.new(1, -16, 0, 42)
-SliderFrame.Position = UDim2.new(0, 8, 0, 132)
+SliderFrame.Position = UDim2.new(0, 8, 0, 172)
 SliderFrame.BackgroundTransparency = 1
 SliderFrame.Parent = Frame
 
@@ -238,7 +274,7 @@ end
 -- TextBoxes (แถว 1: Inter-Fire / Catch Wait)
 local InputsFrame = Instance.new("Frame")
 InputsFrame.Size = UDim2.new(1, -16, 0, 56)
-InputsFrame.Position = UDim2.new(0, 8, 0, 178)
+InputsFrame.Position = UDim2.new(0, 8, 0, 218)
 InputsFrame.BackgroundTransparency = 1
 InputsFrame.Parent = Frame
 
@@ -285,7 +321,7 @@ end)
 -- TextBox (แถว 2: Sell Delay)
 local InputsSell = Instance.new("Frame")
 InputsSell.Size = UDim2.new(1, -16, 0, 40)
-InputsSell.Position = UDim2.new(0, 8, 0, 238)
+InputsSell.Position = UDim2.new(0, 8, 0, 258)
 InputsSell.BackgroundTransparency = 1
 InputsSell.Parent = Frame
 
@@ -372,8 +408,9 @@ task.spawn(function()
                 interruptibleWaitFish(loopDelay, my)
             end
         else
-            -- อย่าแย่งข้อความจาก Auto Sell ถ้ามันกำลังพิมพ์; โหมด Idle ก็พิมพ์ทับช้าๆ พอ
-            if StatusLabel.Text:sub(1, 5) ~= "Sell:" then
+            -- อย่าแย่งข้อความจาก Sell/AFK ถ้ามันกำลังพิมพ์
+            local head = StatusLabel.Text:sub(1,4)
+            if head ~= "Sell" and head ~= "AFK:" then
                 StatusLabel.Text = "Status: Idle"
             end
             task.wait(0.1)
@@ -386,17 +423,47 @@ task.spawn(function()
     while running do
         if autoSell then
             local my = sessionSell
-            -- รอครบ sellDelay แล้วค่อยขาย (ยกเลิกได้)
             StatusLabel.Text = string.format("Sell: waiting %.2fs", sellDelay)
             if interruptibleWaitSell(sellDelay, my) and isActiveSell(my) then
                 StatusLabel.Text = "Sell: invoking..."
                 pcall(function()
                     RFSellAllItems:InvokeServer()
                 end)
-                -- หลังขายเสร็จ โชว์สั้นๆ แล้ววนใหม่
                 if isActiveSell(my) then
                     StatusLabel.Text = "Sell: done"
                     interruptibleWaitSell(0.15, my)
+                end
+            end
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+--// Anti-AFK
+-- ดักเหตุการณ์ Idled (ก่อนเกมจะเตะ): คลิกขวาเบาๆ ปลุก
+local idledConn = LP.Idled:Connect(function()
+    if antiAFK then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new(0,0), workspace.CurrentCamera and workspace.CurrentCamera.CFrame or CFrame.new())
+    end
+end)
+
+-- loop จิ้มเมาส์เป็นระยะ (กันเคสเกมไม่ยิง Idled)
+task.spawn(function()
+    while running do
+        if antiAFK then
+            local my = sessionAFK
+            StatusLabel.Text = string.format("AFK: jiggle in %.0fs", afkInterval)
+            if interruptibleWaitAFK(afkInterval, my) and isActiveAFK(my) then
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0,0), workspace.CurrentCamera and workspace.CurrentCamera.CFrame or CFrame.new())
+                task.wait(0.05)
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0,0), workspace.CurrentCamera and workspace.CurrentCamera.CFrame or CFrame.new())
+                if isActiveAFK(my) then
+                    StatusLabel.Text = "AFK: ping"
+                    interruptibleWaitAFK(0.1, my)
                 end
             end
         else
