@@ -31,7 +31,7 @@ local running = true
 
 -- Fishing state
 local autoFish = false          -- OFF by default
-local loopDelay = 0.20
+local loopDelay = 0.15
 local interFireDelay = 0.35
 local catchWait = 2.0
 local sessionFish = 0
