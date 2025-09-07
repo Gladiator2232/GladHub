@@ -33,7 +33,7 @@ local running = true
 local autoFish = false          -- OFF by default
 local loopDelay = 0.15
 local interFireDelay = 0.35
-local catchWait = 2.0
+local catchWait = 1.25
 local sessionFish = 0
 
 -- Selling state
