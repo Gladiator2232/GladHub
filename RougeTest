@@ -1,0 +1,252 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
+local StatsService = game:GetService("Stats")
+local VInput = game:GetService("VirtualInputManager")
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AdvancedUIScreenGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local windowFrame = Instance.new("Frame")
+windowFrame.Name = "WindowFrame"
+windowFrame.Size = UDim2.new(0, 300, 0, 150)
+windowFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+windowFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+windowFrame.BorderColor3 = Color3.fromRGB(20, 20, 20)
+windowFrame.BorderSizePixel = 2
+windowFrame.ClipsDescendants = true
+windowFrame.Visible = true
+windowFrame.Parent = screenGui
+windowFrame.Selectable = true
+
+local windowCorner = Instance.new("UICorner")
+windowCorner.CornerRadius = UDim.new(0, 8)
+windowCorner.Parent = windowFrame
+
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBar.BorderSizePixel = 0
+titleBar.Active = true
+titleBar.Parent = windowFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, -40, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Text = "GladHub | UI Nav"
+titleLabel.TextSize = 18
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Active = true
+titleLabel.Parent = titleBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -30, 0, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
+closeButton.BorderSizePixel = 0
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Text = "x"
+closeButton.TextSize = 18
+closeButton.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeButton
+
+local statsLabel = Instance.new("TextLabel")
+statsLabel.Name = "StatsLabel"
+statsLabel.Size = UDim2.new(1, -20, 0, 20)
+statsLabel.Position = UDim2.new(0.5, 0, 1, -15)
+statsLabel.AnchorPoint = Vector2.new(0.5, 1)
+statsLabel.BackgroundTransparency = 1
+statsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+statsLabel.Font = Enum.Font.SourceSans
+statsLabel.Text = "FPS: ...  Ping: ...  Mem: ..."
+statsLabel.TextSize = 14
+statsLabel.TextXAlignment = Enum.TextXAlignment.Left
+statsLabel.Parent = windowFrame
+
+local logicButton = Instance.new("TextButton")
+logicButton.Name = "LogicButton"
+logicButton.Size = UDim2.new(1, -20, 0, 40)
+logicButton.Position = UDim2.new(0.5, 0, 0, 45)
+logicButton.AnchorPoint = Vector2.new(0.5, 0)
+logicButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+logicButton.BorderColor3 = Color3.fromRGB(70, 70, 70)
+logicButton.BorderSizePixel = 1
+logicButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+logicButton.Font = Enum.Font.SourceSansBold
+logicButton.Text = "Toggle UI Nav"
+logicButton.TextSize = 18
+logicButton.TextXAlignment = Enum.TextXAlignment.Left
+logicButton.Parent = windowFrame
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 8)
+buttonCorner.Parent = logicButton
+
+local buttonPadding = Instance.new("UIPadding")
+buttonPadding.PaddingLeft = UDim.new(0, 15)
+buttonPadding.Parent = logicButton
+
+local toggleCircle = Instance.new("Frame")
+toggleCircle.Name = "ToggleCircle"
+toggleCircle.Size = UDim2.new(0, 24, 0, 24)
+toggleCircle.Position = UDim2.new(1, -35, 0.5, 0)
+toggleCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+toggleCircle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+toggleCircle.BorderColor3 = Color3.fromRGB(100, 100, 100)
+toggleCircle.Parent = logicButton
+
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1, 0)
+circleCorner.Parent = toggleCircle
+
+--------------------------------------------------------------------------------
+-- TARGET FINDER
+--------------------------------------------------------------------------------
+
+local targetNavigatorElement = nil
+local targetPath = {"HUD", "Bar", "List", "Quest", "Bar", "Cancel", "Button"}
+
+local function findTargetElement()
+    local current = playerGui
+    for _, name in ipairs(targetPath) do
+        current = current:WaitForChild(name, 60)
+    end
+    current.Selectable = true
+    return current
+end
+
+task.spawn(function()
+    targetNavigatorElement = findTargetElement()
+end)
+
+--------------------------------------------------------------------------------
+-- DRAGGING
+--------------------------------------------------------------------------------
+
+local isDragging = false
+local dragStart
+local startPos
+local dragConn
+
+local function startDrag(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+    isDragging = true
+    dragStart = input.Position
+    startPos = windowFrame.Position
+
+    dragConn = RunService.RenderStepped:Connect(function()
+        if isDragging then
+            local delta = UserInputService:GetMouseLocation() - dragStart
+            windowFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+titleBar.InputBegan:Connect(startDrag)
+titleLabel.InputBegan:Connect(startDrag)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+        if dragConn then dragConn:Disconnect() dragConn = nil end
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    windowFrame.Visible = false
+end)
+
+--------------------------------------------------------------------------------
+-- VIRTUAL INPUT CLICK (VECTOR2 FIX)
+--------------------------------------------------------------------------------
+
+local function pressButtonVirtual(btn)
+    if not btn or not btn.AbsolutePosition then return end
+
+    local insetX, insetY = GuiService:GetGuiInset()
+    local pos = btn.AbsolutePosition
+    local size = btn.AbsoluteSize
+
+    local x = pos.X + size.X/2 + insetX
+    local y = pos.Y + size.Y/2 + insetY
+
+    VInput:SendMouseButtonEvent(Vector2.new(x, y), 0, true, game, 1)
+    task.wait()
+    VInput:SendMouseButtonEvent(Vector2.new(x, y), 0, false, game, 1)
+
+    print("🔥 Clicked real UI:", btn.Name)
+end
+
+--------------------------------------------------------------------------------
+-- TOGGLE UI NAVIGATION
+--------------------------------------------------------------------------------
+
+local function toggleUiNavigation()
+    local circle = toggleCircle
+
+    -- turning off navigation
+    if GuiService.SelectedObject then
+        GuiService.SelectedObject = nil
+        logicButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        circle.BackgroundColor3 = Color3.fromRGB(80,80,80)
+        return
+    end
+
+    -- turning on navigation
+    GuiService.SelectedObject = targetNavigatorElement
+    logicButton.BackgroundColor3 = Color3.fromRGB(39,174,96)
+    circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
+
+    task.wait(0.05)
+    pressButtonVirtual(targetNavigatorElement)
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.BackSlash then
+        toggleUiNavigation()
+    end
+end)
+
+logicButton.MouseButton1Click:Connect(toggleUiNavigation)
+
+--------------------------------------------------------------------------------
+-- FPS / PING / MEMORY
+--------------------------------------------------------------------------------
+
+local currentFps = 0
+
+RunService.RenderStepped:Connect(function(dt)
+    currentFps = 1 / dt
+end)
+
+task.spawn(function()
+    while true do
+        if windowFrame.Visible then
+            local ping = math.floor(player:GetNetworkPing()*1000)
+            local mem = StatsService:GetTotalMemoryUsageMb()
+            local fps = math.floor(currentFps + 0.5)
+            statsLabel.Text = ("FPS: %d  Ping: %dms  Mem: %.0fMB"):format(fps, ping, mem)
+        end
+        task.wait(0.5)
+    end
+end)
