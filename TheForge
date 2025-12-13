@@ -120,6 +120,10 @@ local Config = {
     CruiseHeight = 150,
     MoveSpeed = 75,
     
+    -- Kill Nearby Enemy (while mining)
+    KillNearbyEnabled = false,
+    KillNearbyRange = 30,
+    
     -- Avoid Player
     AvoidPlayerEnabled = false,
     AvoidPlayerDistance = 100,
@@ -3677,6 +3681,42 @@ local function FindNearestMonster(): (Instance?, number?)
     return nearestMonster, nearestDist
 end
 
+-- Find ANY nearby enemy within range (for Kill Nearby feature)
+local function FindNearbyEnemy(maxRange: number): (Instance?, number?)
+    local _, hrp, _ = MovementController:GetCharacterParts()
+    if not hrp then return nil, nil end
+    
+    local playerPos = hrp.Position
+    local nearestMonster: Instance? = nil
+    local nearestDist = math.huge
+    
+    local livingFolder = Workspace:FindFirstChild("Living")
+    if not livingFolder then return nil, nil end
+    
+    for _, entity in ipairs(livingFolder:GetChildren()) do
+        if entity:IsA("Model") then
+            local isNpc = entity:GetAttribute("IsNpc")
+            if isNpc == true and IsMonsterAlive(entity) then
+                local monsterPos = GetMonsterPosition(entity)
+                if monsterPos then
+                    local dx = monsterPos.X - playerPos.X
+                    local dy = monsterPos.Y - playerPos.Y
+                    local dz = monsterPos.Z - playerPos.Z
+                    local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+                    
+                    -- Only consider enemies within range
+                    if dist <= maxRange and dist < nearestDist then
+                        nearestDist = dist
+                        nearestMonster = entity
+                    end
+                end
+            end
+        end
+    end
+    
+    return nearestMonster, nearestDist
+end
+
 local function GetNearestPlayerDistance(): (number, Vector3?)
     local _, hrp, _ = MovementController:GetCharacterParts()
     if not hrp then return math.huge, nil end
@@ -4454,6 +4494,102 @@ function FarmSystem:Cleanup()
 end
 
 --// ============================================================
+--// KILL NEARBY ENEMY SYSTEM (While Mining)
+--// ============================================================
+
+local KillNearbySystem = {
+    isActive = false,
+    isKillingEnemy = false,
+    checkLoop = nil :: thread?,
+    savedOrePosition = nil :: Vector3?,
+}
+
+function KillNearbySystem:KillEnemy(enemy: Instance)
+    if self.isKillingEnemy then return end
+    self.isKillingEnemy = true
+    
+    local enemyName = enemy.Name:gsub("%d+$", "")
+    ShowToast(string.format("Killing nearby %s...", enemyName), "warning")
+    
+    -- Save current position to return after
+    local _, hrp, _ = MovementController:GetCharacterParts()
+    if hrp then
+        self.savedOrePosition = hrp.Position
+    end
+    
+    -- Kill the enemy
+    local maxKillTime = 10 -- Max 10 seconds to kill
+    local killStartTime = tick()
+    
+    while IsMonsterAlive(enemy) and self.isActive and State.isAutoMining do
+        if tick() - killStartTime > maxKillTime then
+            ShowToast("Enemy took too long, resuming mining", "info")
+            break
+        end
+        
+        local monsterPos = GetMonsterPosition(enemy)
+        if not monsterPos then break end
+        
+        local killDistance = Config.KillDistance
+        local actionPos = Vector3.new(monsterPos.X, monsterPos.Y + killDistance, monsterPos.Z)
+        
+        -- Move to enemy
+        MovementController:MoveTo(actionPos, Config.MoveSpeed, function() end)
+        
+        -- Face and attack
+        MovementController:FaceTarget(monsterPos)
+        AttackWeapon()
+        
+        task.wait(0.1)
+    end
+    
+    -- Return to mining position
+    if self.savedOrePosition and self.isActive then
+        MovementController:MoveTo(self.savedOrePosition, Config.MoveSpeed, function() end)
+        task.wait(0.5)
+    end
+    
+    self.isKillingEnemy = false
+    self.savedOrePosition = nil
+end
+
+function KillNearbySystem:CheckForEnemies()
+    if not Config.KillNearbyEnabled then return end
+    if not State.isAutoMining then return end
+    if self.isKillingEnemy then return end
+    
+    local enemy, dist = FindNearbyEnemy(Config.KillNearbyRange)
+    if enemy and dist then
+        task.spawn(function()
+            self:KillEnemy(enemy)
+        end)
+    end
+end
+
+function KillNearbySystem:Start()
+    if self.isActive then return end
+    self.isActive = true
+    
+    self.checkLoop = task.spawn(function()
+        while self.isActive and State.isAutoMining do
+            self:CheckForEnemies()
+            task.wait(0.5) -- Check every 0.5 seconds
+        end
+    end)
+end
+
+function KillNearbySystem:Stop()
+    self.isActive = false
+    self.isKillingEnemy = false
+    self.savedOrePosition = nil
+    
+    if self.checkLoop then
+        task.cancel(self.checkLoop)
+        self.checkLoop = nil
+    end
+end
+
+--// ============================================================
 --// FARM CONFIGURATIONS
 --// ============================================================
 
@@ -4551,10 +4687,18 @@ local function StartAutoMine()
     ShowToast(string.format("Mining: %s", targetList), "success")
     
     FarmSystem:Start(MiningConfig)
+    
+    -- Start Kill Nearby Enemy system if enabled
+    if Config.KillNearbyEnabled then
+        KillNearbySystem:Start()
+    end
 end
 
 local function StopAutoMine()
     if not State.isAutoMining then return end
+    
+    -- Stop Kill Nearby Enemy system
+    KillNearbySystem:Stop()
     
     -- CLEAR rock type blacklist when stopped
     ClearRockTypeBlacklist()
@@ -5869,13 +6013,31 @@ local AutoMineToggle = CreateToggle(AutoPage, "Auto Mine Ores", Icons.Mine, 2, f
     end
 end)
 
-CreateButton(AutoPage, "Open Ore Manager", 3, function()
+CreateToggle(AutoPage, "Kill Nearby Enemy", Icons.Kill, 3, function(enabled)
+    Config.KillNearbyEnabled = enabled
+    if enabled then
+        ShowToast(string.format("Kill Nearby: ON (Range: %d)", Config.KillNearbyRange), "success")
+        -- Start system if already mining
+        if State.isAutoMining then
+            KillNearbySystem:Start()
+        end
+    else
+        ShowToast("Kill Nearby: OFF", "info")
+        KillNearbySystem:Stop()
+    end
+end)
+
+CreateSlider(AutoPage, "Kill Range", 1, 100, 30, 4, function(value)
+    Config.KillNearbyRange = value
+end)
+
+CreateButton(AutoPage, "Open Ore Manager", 5, function()
     OreManagerUI:Open()
 end)
 
-CreateSection(AutoPage, "Combat", 4)
+CreateSection(AutoPage, "Combat", 6)
 
-local AutoKillToggle = CreateToggle(AutoPage, "Auto Kill Monsters", Icons.Kill, 5, function(enabled)
+local AutoKillToggle = CreateToggle(AutoPage, "Auto Kill Monsters", Icons.Kill, 7, function(enabled)
     if enabled then
         StartAutoKill()
     else
@@ -5883,13 +6045,13 @@ local AutoKillToggle = CreateToggle(AutoPage, "Auto Kill Monsters", Icons.Kill, 
     end
 end)
 
-CreateButton(AutoPage, "Open Monster Manager", 6, function()
+CreateButton(AutoPage, "Open Monster Manager", 8, function()
     MonsterManagerUI:Open()
 end)
 
-CreateSection(AutoPage, "Safety", 7)
+CreateSection(AutoPage, "Safety", 9)
 
-CreateToggle(AutoPage, "Avoid Players", Icons.ESP, 8, function(enabled)
+CreateToggle(AutoPage, "Avoid Players", Icons.ESP, 10, function(enabled)
     Config.AvoidPlayerEnabled = enabled
     ShowToast(enabled and "Avoid: ON" or "Avoid: OFF", enabled and "success" or "info")
 end)
@@ -6467,6 +6629,10 @@ _G.GladHubDebug = {
     BlacklistRockType = BlacklistRockType,
     ClearRockTypeBlacklist = ClearRockTypeBlacklist,
     
+    -- Kill Nearby System
+    KillNearbySystem = KillNearbySystem,
+    FindNearbyEnemy = FindNearbyEnemy,
+    
     -- Show current blacklist
     ShowBlacklist = function()
         print("\n═══════════════════════════════════════")
@@ -6489,9 +6655,9 @@ print("  Glad Hub | The Forge | V7.7")
 print("     SMART FARMING EDITION")
 print("═══════════════════════════════════════════════")
 print("  + SMART BLACKLIST: Can't mine? → Lower tier")
+print("  + KILL NEARBY: Auto-kill enemies while mining")
 print("  + Target-Only Mining (mines selected rocks)")
 print("  + LastHitPlayer check (skip others' rocks)")
-print("  + DEATH RESPAWN: Auto-navigate after death")
 print("  Device:", IsMobile and "MOBILE" or "PC")
 print("═══════════════════════════════════════════════")
 print("")
